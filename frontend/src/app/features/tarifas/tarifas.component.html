@@ -1,0 +1,93 @@
+<div class="page-header">
+  <div>
+    <h1>Tarifas</h1>
+    <p>Gestiona los precios por tipo de servicio y zona.</p>
+  </div>
+  <button class="btn-primary" (click)="abrirModalCrear()">+ Nueva tarifa</button>
+</div>
+
+@if (cargando()) {
+  <p class="loading">Cargando tarifas...</p>
+} @else if (error()) {
+  <p class="error-message">{{ error() }}</p>
+} @else if (tarifas().length === 0) {
+  <div class="empty-state">
+    <p>Todavía no hay tarifas registradas.</p>
+  </div>
+} @else {
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Tipo de servicio</th>
+          <th>Zona</th>
+          <th>Precio/hora</th>
+          <th>Precio fijo</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (tarifa of tarifas(); track tarifa.id) {
+          <tr>
+            <td>{{ tarifa.tipoServicio }}</td>
+            <td>
+              <span class="badge" [class.badge-empresa]="tarifa.zona === 'FUERA_MADRID'">
+                {{ tarifa.zona === 'MADRID' ? 'Madrid' : 'Fuera de Madrid' }}
+              </span>
+            </td>
+            <td>{{ tarifa.precioHora ? (tarifa.precioHora + ' €') : '—' }}</td>
+            <td>{{ tarifa.precioFijo ? (tarifa.precioFijo + ' €') : '—' }}</td>
+            <td class="acciones">
+              <button class="btn-icon" title="Editar" (click)="abrirModalEditar(tarifa)">✎</button>
+              <button class="btn-icon btn-danger" title="Eliminar" (click)="eliminarTarifa(tarifa.id!)">🗑</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (modalAbierto()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>{{ tarifaEnEdicion ? 'Editar tarifa' : 'Nueva tarifa' }}</h2>
+
+      <form (ngSubmit)="guardarTarifa()">
+        <div class="form-group">
+          <label>Tipo de servicio</label>
+          <select [(ngModel)]="formTarifa.tipoServicio" name="tipoServicio">
+            <option value="CASA">Casa</option>
+            <option value="OFICINA">Oficina</option>
+            <option value="EVENTO">Evento</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Zona</label>
+          <select [(ngModel)]="formTarifa.zona" name="zona">
+            <option value="MADRID">Madrid</option>
+            <option value="FUERA_MADRID">Fuera de Madrid</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Precio por hora (€)</label>
+          <input type="number" step="0.01" [(ngModel)]="formTarifa.precioHora" name="precioHora" />
+        </div>
+
+        <div class="form-group">
+          <label>Precio fijo (€)</label>
+          <input type="number" step="0.01" [(ngModel)]="formTarifa.precioFijo" name="precioFijo" />
+        </div>
+
+        <p class="form-hint">Rellena solo uno de los dos precios, según cómo se cobre este tipo de servicio.</p>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

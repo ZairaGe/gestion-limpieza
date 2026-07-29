@@ -13,8 +13,21 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
-      }
-      // aquí iremos añadiendo: clientes, empleados, tarifas, servicios, facturas...
+      },
+      {
+        path: 'clientes',
+        loadComponent: () => import('./features/clientes/clientes.component').then(m => m.ClientesComponent)
+      },
+      {
+        path: 'empleados',
+        loadComponent: () => import('./features/empleados/empleados.component').then(m => m.EmpleadosComponent)
+      },
+      {
+        path: 'tarifas',
+        loadComponent: () => import('./features/tarifas/tarifas.component').then(m => m.TarifasComponent)
+      },
+      
+      
     ]
   },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
