@@ -1,1 +1,119 @@
-<p>dashboard works!</p>
+<div class="page-header">
+  <div>
+    <h1>Dashboard</h1>
+    <p>Vista general de tu actividad.</p>
+  </div>
+</div>
+
+@if (cargando()) {
+  <p class="loading">Cargando resumen...</p>
+} @else if (resumen()) {
+  <div class="cards-grid">
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span>Servicios hoy</span>
+        <span class="kpi-icon icon-green">📅</span>
+      </div>
+      <div class="kpi-value">{{ resumen()!.serviciosHoy }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span>Ingresos semana</span>
+        <span class="kpi-icon icon-blue">💶</span>
+      </div>
+      <div class="kpi-value">{{ resumen()!.ingresosSemana | number: '1.2-2' }} €</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span>Trabajadores activos</span>
+        <span class="kpi-icon icon-purple">👥</span>
+      </div>
+      <div class="kpi-value">{{ resumen()!.trabajadoresActivos }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span>Pendientes asignar</span>
+        <span class="kpi-icon icon-amber">⚠</span>
+      </div>
+      <div class="kpi-value">{{ resumen()!.pendientesAsignar }}</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div class="agenda-card">
+      <div class="card-header">
+        <h2>Agenda de hoy</h2>
+        <span class="fecha-hoy">{{ hoyFormateado }}</span>
+      </div>
+
+      @if (resumen()!.agendaHoy.length === 0) {
+        <div class="empty-agenda">
+          <span class="check-icon">✓</span>
+          <p>No hay servicios programados para hoy</p>
+        </div>
+      } @else {
+        <div class="agenda-list">
+          @for (servicio of resumen()!.agendaHoy; track servicio.id) {
+            <div class="agenda-item">
+              <div class="agenda-hora">{{ servicio.horaInicio }} - {{ servicio.horaFin }}</div>
+              <div class="agenda-info">
+                <strong>{{ servicio.clienteNombre }}</strong>
+                <span>{{ servicio.direccion }}</span>
+              </div>
+              <span class="badge">{{ servicio.estado }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="sidebar-cards">
+      <div class="side-card">
+        <h2>Trabajadores</h2>
+        @if (resumen()!.trabajadores.length === 0) {
+          <p class="empty-mini">Sin trabajadores activos.</p>
+        } @else {
+          <ul class="trabajadores-list">
+            @for (t of resumen()!.trabajadores; track t.id) {
+              <li>{{ t.nombre }}</li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="side-card">
+        <h2>Tarifas activas</h2>
+        <ul class="tarifas-list">
+          @for (tarifa of resumen()!.tarifasActivas; track tarifa.tipoServicio + tarifa.zona) {
+            <li>
+              <div>
+                <strong>{{ tarifa.zona === 'MADRID' ? 'Madrid' : (tarifa.zona === 'FUERA_MADRID' ? 'Fuera de Madrid' : tarifa.zona) }}</strong>
+                <span>{{ tarifa.tipoServicio }}</span>
+              </div>
+              <span class="precio">
+                {{ tarifa.precioHora ? (tarifa.precioHora + ' €/h') : (tarifa.precioFijo + ' €') }}
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <div class="resumen-semanal">
+        <h2>📈 Resumen semanal</h2>
+        <div class="resumen-datos">
+          <div>
+            <span>Total servicios</span>
+            <strong>{{ resumen()!.resumenSemanal.totalServicios }}</strong>
+          </div>
+          <div>
+            <span>Pendientes</span>
+            <strong>{{ resumen()!.resumenSemanal.pendientes }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

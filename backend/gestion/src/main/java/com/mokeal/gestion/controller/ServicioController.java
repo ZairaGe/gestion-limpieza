@@ -1,7 +1,7 @@
 package com.mokeal.gestion.controller;
 
 import com.mokeal.gestion.dto.ServicioRequest;
-import com.mokeal.gestion.model.Servicio;
+import com.mokeal.gestion.dto.ServicioResponse;
 import com.mokeal.gestion.service.ServicioService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,7 +21,7 @@ public class ServicioController {
     }
 
     @GetMapping
-    public List<Servicio> listar(
+    public List<ServicioResponse> listar(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
             @RequestParam(required = false) Long empleadoId) {
 
@@ -35,18 +35,18 @@ public class ServicioController {
     }
 
     @GetMapping("/{id}")
-    public Servicio buscar(@PathVariable Long id) {
+    public ServicioResponse buscar(@PathVariable Long id) {
         return servicioService.buscarPorId(id);
     }
 
     @PostMapping
-    public ResponseEntity<Servicio> crear(@Valid @RequestBody ServicioRequest request) {
-        Servicio nuevo = servicioService.crear(request);
+    public ResponseEntity<ServicioResponse> crear(@Valid @RequestBody ServicioRequest request) {
+        ServicioResponse nuevo = servicioService.crear(request);
         return ResponseEntity.status(201).body(nuevo);
     }
 
     @PutMapping("/{id}")
-    public Servicio actualizar(@PathVariable Long id, @Valid @RequestBody ServicioRequest request) {
+    public ServicioResponse actualizar(@PathVariable Long id, @Valid @RequestBody ServicioRequest request) {
         return servicioService.actualizar(id, request);
     }
 

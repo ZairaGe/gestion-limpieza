@@ -26,7 +26,14 @@ export const routes: Routes = [
         path: 'tarifas',
         loadComponent: () => import('./features/tarifas/tarifas.component').then(m => m.TarifasComponent)
       },
-      
+      {
+        path: 'servicios',
+        loadComponent: () => import('./features/servicios/servicios.component').then(m => m.ServiciosComponent)
+      },
+      {
+        path: 'facturas',
+        loadComponent: () => import('./features/facturas/facturas.component').then(m => m.FacturasComponent)
+      }
       
     ]
   },

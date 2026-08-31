@@ -1,0 +1,93 @@
+<div class="page-header">
+  <div>
+    <h1>Facturas</h1>
+    <p>Gestiona la facturación de los servicios.</p>
+  </div>
+  <button class="btn-primary" (click)="abrirModalCrear()">+ Nueva factura</button>
+</div>
+
+@if (cargando()) {
+  <p class="loading">Cargando facturas...</p>
+} @else if (error()) {
+  <p class="error-message">{{ error() }}</p>
+} @else if (facturas().length === 0) {
+  <div class="empty-state">
+    <p>Todavía no hay facturas registradas.</p>
+  </div>
+} @else {
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Número</th>
+          <th>Servicio</th>
+          <th>Importe</th>
+          <th>Fecha emisión</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (factura of facturas(); track factura.id) {
+          <tr>
+            <td>{{ factura.numero }}</td>
+            <td>{{ nombreServicio(factura.servicioId) }}</td>
+            <td>{{ factura.importe }} €</td>
+            <td>{{ factura.fechaEmision }}</td>
+            <td>
+              <span class="badge" [class.badge-empresa]="factura.estado === 'PAGADA'">
+                {{ factura.estado }}
+              </span>
+            </td>
+            <td class="acciones">
+              @if (factura.estado === 'PENDIENTE') {
+                <button class="btn-icon" title="Marcar como pagada" (click)="marcarComoPagada(factura.id!)">✓</button>
+              }
+              <button class="btn-icon btn-danger" title="Eliminar" (click)="eliminarFactura(factura.id!)">🗑</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (modalAbierto()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>Nueva factura</h2>
+
+      <form (ngSubmit)="guardarFactura()">
+        <div class="form-group">
+          <label>Servicio</label>
+          <select [(ngModel)]="formFactura.servicioId" name="servicioId" required>
+            <option [ngValue]="0" disabled>Selecciona un servicio</option>
+            @for (servicio of serviciosSinFactura(); track servicio.id) {
+              <option [ngValue]="servicio.id">{{ servicio.clienteNombre }} — {{ servicio.fecha }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Número de factura</label>
+          <input type="text" [(ngModel)]="formFactura.numero" name="numero" placeholder="FAC-2026-001" required />
+        </div>
+
+        <div class="form-group">
+          <label>Importe (€)</label>
+          <input type="number" step="0.01" [(ngModel)]="formFactura.importe" name="importe" required />
+        </div>
+
+        <div class="form-group">
+          <label>Fecha de emisión</label>
+          <input type="date" [(ngModel)]="formFactura.fechaEmision" name="fechaEmision" required />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

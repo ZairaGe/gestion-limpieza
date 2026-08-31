@@ -1,9 +1,11 @@
 package com.mokeal.gestion.service;
 
 import com.mokeal.gestion.dto.ServicioRequest;
+import com.mokeal.gestion.dto.ServicioResponse;
 import com.mokeal.gestion.model.*;
 import com.mokeal.gestion.repository.*;
 import org.springframework.stereotype.Service;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,36 +27,46 @@ public class ServicioService {
         this.empleadoRepository = empleadoRepository;
     }
 
-    public List<Servicio> listarTodos() {
-        return servicioRepository.findAll();
+    public List<ServicioResponse> listarTodos() {
+        return servicioRepository.findAll().stream()
+                .map(this::convertir)
+                .collect(Collectors.toList());
     }
 
-    public Servicio buscarPorId(Long id) {
+    public ServicioResponse buscarPorId(Long id) {
+        return convertir(buscarEntidad(id));
+    }
+
+    public List<ServicioResponse> buscarPorFecha(LocalDate fecha) {
+        return servicioRepository.findByFecha(fecha).stream()
+                .map(this::convertir)
+                .collect(Collectors.toList());
+    }
+
+    public List<ServicioResponse> buscarPorEmpleado(Long empleadoId) {
+        return servicioRepository.findByEmpleados_Id(empleadoId).stream()
+                .map(this::convertir)
+                .collect(Collectors.toList());
+    }
+
+    private Servicio buscarEntidad(Long id) {
         return servicioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Servicio no encontrado con id: " + id));
     }
 
-    public List<Servicio> buscarPorFecha(java.time.LocalDate fecha) {
-        return servicioRepository.findByFecha(fecha);
-    }
-
-    public List<Servicio> buscarPorEmpleado(Long empleadoId) {
-        return servicioRepository.findByEmpleados_Id(empleadoId);
-    }
-
-    public Servicio crear(ServicioRequest request) {
+    public ServicioResponse crear(ServicioRequest request) {
         Servicio servicio = construirDesdeRequest(new Servicio(), request);
-        return servicioRepository.save(servicio);
+        return convertir(servicioRepository.save(servicio));
     }
 
-    public Servicio actualizar(Long id, ServicioRequest request) {
-        Servicio servicio = buscarPorId(id);
+    public ServicioResponse actualizar(Long id, ServicioRequest request) {
+        Servicio servicio = buscarEntidad(id);
         servicio = construirDesdeRequest(servicio, request);
-        return servicioRepository.save(servicio);
+        return convertir(servicioRepository.save(servicio));
     }
 
     public void eliminar(Long id) {
-        Servicio servicio = buscarPorId(id);
+        Servicio servicio = buscarEntidad(id);
         servicioRepository.delete(servicio);
     }
 
@@ -78,5 +90,29 @@ public class ServicioService {
         servicio.setEmpleados(new HashSet<>(empleados));
 
         return servicio;
+    }
+
+    private ServicioResponse convertir(Servicio servicio) {
+        Set<ServicioResponse.EmpleadoResumen> empleadosResumen = servicio.getEmpleados().stream()
+                .map(e -> ServicioResponse.EmpleadoResumen.builder()
+                        .id(e.getId())
+                        .nombre(e.getNombre())
+                        .build())
+                .collect(Collectors.toSet());
+
+        return ServicioResponse.builder()
+                .id(servicio.getId())
+                .clienteId(servicio.getCliente().getId())
+                .clienteNombre(servicio.getCliente().getNombre())
+                .tarifaId(servicio.getTarifa().getId())
+                .tarifaTipoServicio(servicio.getTarifa().getTipoServicio().name())
+                .tarifaZona(servicio.getTarifa().getZona().name())
+                .direccion(servicio.getDireccion())
+                .fecha(servicio.getFecha())
+                .horaInicio(servicio.getHoraInicio())
+                .horaFin(servicio.getHoraFin())
+                .estado(servicio.getEstado())
+                .empleados(empleadosResumen)
+                .build();
     }
 }

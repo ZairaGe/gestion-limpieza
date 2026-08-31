@@ -1,0 +1,126 @@
+<div class="page-header">
+  <div>
+    <h1>Servicios</h1>
+    <p>Gestiona los servicios programados.</p>
+  </div>
+  <button class="btn-primary" (click)="abrirModalCrear()">+ Nuevo servicio</button>
+</div>
+
+@if (cargando()) {
+  <p class="loading">Cargando servicios...</p>
+} @else if (error()) {
+  <p class="error-message">{{ error() }}</p>
+} @else if (servicios().length === 0) {
+  <div class="empty-state">
+    <p>Todavía no hay servicios programados.</p>
+  </div>
+} @else {
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Fecha</th>
+          <th>Horario</th>
+          <th>Dirección</th>
+          <th>Empleados</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (servicio of servicios(); track servicio.id) {
+          <tr>
+            <td>{{ servicio.clienteNombre }}</td>
+<td>{{ servicio.fecha }}</td>
+<td>{{ servicio.horaInicio }} - {{ servicio.horaFin }}</td>
+<td>{{ servicio.direccion }}</td>
+<td>{{ servicio.empleados.map(e => e.nombre).join(', ') || '—' }}</td>
+            <td>
+              <span class="badge">{{ servicio.estado }}</span>
+            </td>
+            <td class="acciones">
+              <button class="btn-icon" title="Editar" (click)="abrirModalEditar(servicio)">✎</button>
+              <button class="btn-icon btn-danger" title="Eliminar" (click)="eliminarServicio(servicio.id!)">🗑</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (modalAbierto()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>{{ servicioEnEdicion ? 'Editar servicio' : 'Nuevo servicio' }}</h2>
+
+      <form (ngSubmit)="guardarServicio()">
+        <div class="form-group">
+          <label>Cliente</label>
+          <select [(ngModel)]="formServicio.clienteId" name="clienteId" required>
+            <option [ngValue]="0" disabled>Selecciona un cliente</option>
+            @for (cliente of clientes(); track cliente.id) {
+              <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Tarifa</label>
+          <select [(ngModel)]="formServicio.tarifaId" name="tarifaId" required>
+            <option [ngValue]="0" disabled>Selecciona una tarifa</option>
+            @for (tarifa of tarifas(); track tarifa.id) {
+              <option [ngValue]="tarifa.id">
+                {{ tarifa.tipoServicio }} — {{ tarifa.zona === 'MADRID' ? 'Madrid' : 'Fuera de Madrid' }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Dirección</label>
+          <input type="text" [(ngModel)]="formServicio.direccion" name="direccion" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha</label>
+            <input type="date" [(ngModel)]="formServicio.fecha" name="fecha" required />
+          </div>
+
+          <div class="form-group">
+            <label>Hora inicio</label>
+            <input type="time" [(ngModel)]="formServicio.horaInicio" name="horaInicio" required />
+          </div>
+
+          <div class="form-group">
+            <label>Hora fin</label>
+            <input type="time" [(ngModel)]="formServicio.horaFin" name="horaFin" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Empleados asignados</label>
+          <div class="checklist">
+            @for (empleado of empleados(); track empleado.id) {
+              <label class="checklist-item">
+                <input
+                  type="checkbox"
+                  [checked]="empleadoSeleccionado(empleado.id!)"
+                  (change)="toggleEmpleado(empleado.id!)"
+                />
+                {{ empleado.nombre }}
+              </label>
+            }
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

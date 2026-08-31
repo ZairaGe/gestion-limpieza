@@ -1,15 +1,23 @@
 export type EstadoServicio = 'PENDIENTE' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO';
 
+export interface EmpleadoResumen {
+  id: number;
+  nombre: string;
+}
+
 export interface Servicio {
   id?: number;
-  cliente: { id: number; nombre: string };
-  tarifa: { id: number; tipoServicio: string; zona: string };
+  clienteId: number;
+  clienteNombre: string;
+  tarifaId: number;
+  tarifaTipoServicio: string;
+  tarifaZona: string;
   direccion: string;
-  fecha: string;       // formato 'YYYY-MM-DD'
-  horaInicio: string;  // formato 'HH:mm'
+  fecha: string;
+  horaInicio: string;
   horaFin: string;
   estado: EstadoServicio;
-  empleados: { id: number; nombre: string }[];
+  empleados: EmpleadoResumen[];
 }
 
 export interface ServicioRequest {
