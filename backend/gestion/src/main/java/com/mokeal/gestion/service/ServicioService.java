@@ -43,6 +43,12 @@ public class ServicioService {
                 .collect(Collectors.toList());
     }
 
+    public List<ServicioResponse> buscarPorRangoFechas (LocalDate desde, LocalDate hasta) {
+        return servicioRepository.findByFechaBetween(desde, hasta).stream()
+                .map(this::convertir)
+                .collect(Collectors.toList());
+    }
+
     public List<ServicioResponse> buscarPorEmpleado(Long empleadoId) {
         return servicioRepository.findByEmpleados_Id(empleadoId).stream()
                 .map(this::convertir)

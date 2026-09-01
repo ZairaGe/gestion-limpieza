@@ -23,8 +23,15 @@ public class ServicioController {
     @GetMapping
     public List<ServicioResponse> listar(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) Long empleadoId) {
 
+
+        if (desde != null && hasta != null) {
+            return servicioService.buscarPorRangoFechas(desde, hasta);
+        }
+        
         if (fecha != null) {
             return servicioService.buscarPorFecha(fecha);
         }

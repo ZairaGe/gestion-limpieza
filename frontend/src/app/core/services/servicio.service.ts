@@ -11,6 +11,10 @@ export class ServicioService {
 
   constructor(private http: HttpClient) {}
 
+  listarPorRango(desde: string, hasta: string): Observable<Servicio[]> {
+    return this.http.get<Servicio[]>(this.apiUrl, { params: { desde, hasta } });
+  }
+
   listar(): Observable<Servicio[]> {
     return this.http.get<Servicio[]>(this.apiUrl);
   }

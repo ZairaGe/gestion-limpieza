@@ -1,0 +1,288 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 1.8rem;
+  color: #0f3d3a;
+  margin: 0 0 0.3rem 0;
+}
+
+.page-header p {
+  color: #6b7280;
+  margin: 0;
+}
+
+.btn-primary {
+  background-color: #14b8a6;
+  color: white;
+  border: none;
+  padding: 0.7rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #0d9488;
+}
+
+.loading, .error-message {
+  color: #6b7280;
+}
+
+.error-message {
+  color: #dc2626;
+}
+
+.empty-state {
+  background: white;
+  border-radius: 12px;
+  padding: 3rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.table-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background-color: #f9fafb;
+}
+
+th {
+  text-align: left;
+  padding: 0.9rem 1.2rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+td {
+  padding: 0.9rem 1.2rem;
+  border-top: 1px solid #f0f0f0;
+  color: #374151;
+}
+
+.badge {
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.badge-empresa {
+  background-color: #d1ede9;
+  color: #0f3d3a;
+}
+
+.acciones {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+}
+
+.btn-icon:hover {
+  background-color: #f3f4f6;
+}
+
+.btn-danger:hover {
+  background-color: #fef2f2;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal h2 {
+  margin: 0 0 1.5rem 0;
+  color: #0f3d3a;
+  font-size: 1.3rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: #374151;
+  margin-bottom: 0.3rem;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #14b8a6;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+}
+
+.btn-secondary {
+  background-color: #f3f4f6;
+  color: #374151;
+  border: none;
+  padding: 0.7rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #e5e7eb;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.semana-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.semana-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.8rem;
+}
+
+.dia-columna {
+  background: white;
+  border-radius: 12px;
+  padding: 0.8rem;
+  min-height: 200px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.dia-hoy {
+  border: 2px solid #14b8a6;
+}
+
+.dia-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f3d3a;
+  margin-bottom: 0.8rem;
+  text-align: center;
+}
+
+.dia-vacio {
+  color: #9ca3af;
+  font-size: 0.8rem;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.servicio-card {
+  background-color: #f9fafb;
+  border-radius: 8px;
+  padding: 0.6rem;
+  margin-bottom: 0.6rem;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.servicio-card:hover {
+  background-color: #e0f2f0;
+}
+
+.servicio-hora {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.servicio-cliente {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f3d3a;
+  margin: 0.2rem 0;
+}
+
+.servicio-direccion {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-bottom: 0.4rem;
+}
+
+.empleado-chip {
+  display: inline-block;
+  background-color: #d1ede9;
+  color: #0f3d3a;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  margin: 0.1rem 0.2rem 0.1rem 0;
+}
+
+.chip-vacio {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.modal-subtitle {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: -0.5rem 0 1.2rem 0;
+}
