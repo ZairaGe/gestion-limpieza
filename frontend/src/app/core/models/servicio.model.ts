@@ -13,6 +13,8 @@ export interface Servicio {
   tarifaTipoServicio: string;
   tarifaZona: string;
   direccion: string;
+  latitud?: number;
+  longitud?: number;
   fecha: string;
   horaInicio: string;
   horaFin: string;

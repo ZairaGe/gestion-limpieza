@@ -6,8 +6,8 @@
 
 .sidebar {
   width: 260px;
-  background-color: #f0f7f5;
-  border-right: 1px solid #e0e8e6;
+  background-color: #f0f5f7;
+  border-right: 1px solid #e0e5e8;
   display: flex;
   flex-direction: column;
   padding: 1.5rem 1rem;
@@ -23,7 +23,7 @@
 }
 
 .logo-icon {
-  background-color: #14b8a6;
+  background-color: #148fb8;
   color: white;
   width: 32px;
   height: 32px;
@@ -35,7 +35,7 @@
 
 .logo h1 {
   font-size: 1.2rem;
-  color: #0f3d3a;
+  color: #0f2e3d;
   margin: 0;
 }
 
@@ -67,12 +67,12 @@ nav {
 }
 
 .menu-item:hover {
-  background-color: #e0f2f0;
+  background-color: #e0ebf2;
 }
 
 .menu-item.active {
-  background-color: #d1ede9;
-  color: #0f3d3a;
+  background-color: #d1e2ed;
+  color: #0f2b3d;
   font-weight: 600;
 }
 
@@ -82,7 +82,7 @@ nav {
 }
 
 .sidebar-footer {
-  border-top: 1px solid #e0e8e6;
+  border-top: 1px solid #e0e5e8;
   padding-top: 1rem;
 }
 

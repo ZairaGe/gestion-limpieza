@@ -4,6 +4,7 @@ import { ServicioService } from '../../core/services/servicio.service';
 import { EmpleadoService } from '../../core/services/empleado.service';
 import { Servicio, ServicioRequest } from '../../core/models/servicio.model';
 import { Empleado } from '../../core/models/empleado.model';
+import { MapaServiciosComponent } from '../../shared/components/mapa-servicios/mapa-servicios.component';
 
 interface DiaSemana {
   fecha: string;
@@ -15,7 +16,7 @@ interface DiaSemana {
 @Component({
   selector: 'app-distribucion',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MapaServiciosComponent],
   templateUrl: './distribucion.component.html',
   styleUrl: './distribucion.component.css'
 })
@@ -31,6 +32,8 @@ export class DistribucionComponent implements OnInit {
   modalAbierto = signal(false);
   servicioSeleccionado: Servicio | null = null;
   empleadosSeleccionados: number[] = [];
+
+  serviciosSemana = signal<Servicio[]>([]);
 
   constructor(
     private servicioService: ServicioService,
@@ -64,6 +67,7 @@ export class DistribucionComponent implements OnInit {
 
     this.servicioService.listarPorRango(desde, hasta).subscribe({
       next: (servicios) => {
+        this.serviciosSemana.set(servicios);
         this.dias.set(this.agruparPorDia(servicios));
         this.cargando.set(false);
       },

@@ -20,6 +20,8 @@ public class ServicioResponse {
     private LocalTime horaInicio;
     private LocalTime horaFin;
     private EstadoServicio estado;
+    private Double latitud;
+    private Double longitud;
     private Set<EmpleadoResumen> empleados;
 
     @Data

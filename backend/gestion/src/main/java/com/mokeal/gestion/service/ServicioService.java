@@ -18,13 +18,15 @@ public class ServicioService {
     private final ClienteRepository clienteRepository;
     private final TarifaRepository tarifaRepository;
     private final EmpleadoRepository empleadoRepository;
+    private final GeocodingService geocodingService;
 
     public ServicioService(ServicioRepository servicioRepository, ClienteRepository clienteRepository,
-                            TarifaRepository tarifaRepository, EmpleadoRepository empleadoRepository) {
+                            TarifaRepository tarifaRepository, EmpleadoRepository empleadoRepository, GeocodingService geocodingService) {
         this.servicioRepository = servicioRepository;
         this.clienteRepository = clienteRepository;
         this.tarifaRepository = tarifaRepository;
         this.empleadoRepository = empleadoRepository;
+        this.geocodingService = geocodingService;
     }
 
     public List<ServicioResponse> listarTodos() {
@@ -95,6 +97,13 @@ public class ServicioService {
         servicio.setHoraFin(request.getHoraFin());
         servicio.setEmpleados(new HashSet<>(empleados));
 
+        // Geocodificar la dirección y establecer las coordenadas
+        double[] coordenadas = geocodingService.geocodificar(request.getDireccion());
+        if (coordenadas != null) {
+            servicio.setLatitud(coordenadas[0]);
+            servicio.setLongitud(coordenadas[1]);
+        }
+
         return servicio;
     }
 
@@ -118,6 +127,8 @@ public class ServicioService {
                 .horaInicio(servicio.getHoraInicio())
                 .horaFin(servicio.getHoraFin())
                 .estado(servicio.getEstado())
+                .latitud(servicio.getLatitud())
+                .longitud(servicio.getLongitud())
                 .empleados(empleadosResumen)
                 .build();
     }

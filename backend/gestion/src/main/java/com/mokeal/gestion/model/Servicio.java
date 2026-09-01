@@ -33,6 +33,10 @@ public class Servicio {
     @Column(nullable = false, length = 255)
     private String direccion;
 
+    private Double latitud;
+
+    private Double longitud;
+
     @NotNull(message = "La fecha es obligatoria")
     @Column(nullable = false)
     private LocalDate fecha;
