@@ -5,6 +5,7 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Set;
+import java.util.HashSet;
 
 @Data
 public class ServicioRequest {
@@ -27,6 +28,5 @@ public class ServicioRequest {
     @NotNull(message = "La hora de fin es obligatoria")
     private LocalTime horaFin;
 
-    @NotEmpty(message = "Debe asignar al menos un empleado")
-    private Set<Long> empleadoIds;
+    private Set<Long> empleadoIds = new java.util.HashSet<>();
 }

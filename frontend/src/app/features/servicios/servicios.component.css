@@ -220,3 +220,8 @@ td {
 .checklist-item input[type="checkbox"] {
   width: auto;
 }
+
+.chip-vacio {
+  background-color: #fef2f2;
+  color: #dc2626;
+}

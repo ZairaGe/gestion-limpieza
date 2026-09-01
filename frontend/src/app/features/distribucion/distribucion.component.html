@@ -17,34 +17,45 @@
 } @else {
 <div class="semana-grid">
     @for (dia of dias(); track dia.fecha) {
-    <div class="dia-columna" [class.dia-hoy]="dia.esHoy">
+    <div class="dia-columna" [class.dia-hoy]="dia.esHoy" [class.dia-seleccionada]="dia.fecha === diaSeleccionado()">
         <div class="dia-header">{{ dia.etiqueta }}</div>
 
-        @if (dia.servicios.length === 0) {
-        <p class="dia-vacio">Sin servicios</p>
-        } @else {
-        @for (servicio of dia.servicios; track servicio.id) {
-        <div class="servicio-card" (click)="abrirAsignacion(servicio)">
-            <div class="servicio-hora">{{ servicio.horaInicio }} - {{ servicio.horaFin }}</div>
-            <div class="servicio-cliente">{{ servicio.clienteNombre }}</div>
-            <div class="servicio-direccion">{{ servicio.direccion }}</div>
-
-            @if (servicio.empleados.length === 0) {
-            <span class="empleado-chip chip-vacio">Sin asignar</span>
+        <div class="dia-servicios-scroll">
+            @if (dia.servicios.length === 0) {
+            <p class="dia-vacio">Sin servicios</p>
             } @else {
-            @for (emp of servicio.empleados; track emp.id) {
-            <span class="empleado-chip">{{ emp.nombre }}</span>
+            @for (servicio of dia.servicios; track servicio.id; let i = $index) {
+            <div class="servicio-card" (click)="abrirAsignacion(servicio)">
+                <div class="servicio-hora">{{ servicio.horaInicio }} - {{ servicio.horaFin }}</div>
+                <div class="servicio-cliente">{{ servicio.clienteNombre }}</div>
+                <div class="servicio-direccion">{{ servicio.direccion }}</div>
+
+                @if (servicio.empleados.length === 0) {
+                <span class="empleado-chip chip-vacio">Sin asignar</span>
+                } @else {
+                @for (emp of servicio.empleados; track emp.id) {
+                <span class="empleado-chip">{{ emp.nombre }}</span>
+                }
+                }
+            </div>
+
+            @if (i < dia.servicios.length - 1) {
+                @let distancia = calcularDistanciaKm(servicio, dia.servicios[i + 1]);
+                @if (distancia !== null) {
+                <div class="distancia-indicador" [class.distancia-lejos]="distancia > 5">
+                    ↓ {{ distancia | number: '1.1-1' }} km
+                </div>
+                }
+            }
             }
             }
         </div>
-        }
-        }
     </div>
     }
 </div>
 <div class="mapa-section">
-    <h2>Mapa de servicios de la semana</h2>
-    <app-mapa-servicios [servicios]="serviciosSemana()"></app-mapa-servicios>
+    <h2>Servicios del {{ etiquetaDiaSeleccionado() }}</h2>
+    <app-mapa-servicios [servicios]="servicioDiaSeleccionado()"></app-mapa-servicios>
 </div>
 }
 
