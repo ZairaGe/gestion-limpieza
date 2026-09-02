@@ -1,15 +1,14 @@
 package com.mokeal.gestion.dto;
 
+import com.mokeal.gestion.model.DiaSemana;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Set;
-import java.util.HashSet;
-import jakarta.validation.constraints.Positive;
 
 @Data
-public class ServicioRequest {
+public class ServicioRecurrenteRequest {
 
     @NotNull(message = "El cliente es obligatorio")
     private Long clienteId;
@@ -20,9 +19,6 @@ public class ServicioRequest {
     @NotBlank(message = "La dirección es obligatoria")
     private String direccion;
 
-    @NotNull(message = "La fecha es obligatoria")
-    private LocalDate fecha;
-
     @NotNull(message = "La hora de inicio es obligatoria")
     private LocalTime horaInicio;
 
@@ -30,5 +26,14 @@ public class ServicioRequest {
     @Positive(message = "La duración debe ser mayor que 0")
     private Double duracionHoras;
 
+    @NotEmpty(message = "Debe seleccionar al menos un día de la semana")
+    private Set<DiaSemana> diasSemana;
+
     private Set<Long> empleadoIds = new java.util.HashSet<>();
+
+    @NotNull(message = "La fecha de inicio es obligatoria")
+    private LocalDate fechaInicio;
+
+    @NotNull(message = "La fecha de fin es obligatoria")
+    private LocalDate fechaFin;
 }

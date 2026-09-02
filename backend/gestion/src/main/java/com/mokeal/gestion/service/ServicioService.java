@@ -21,7 +21,8 @@ public class ServicioService {
     private final GeocodingService geocodingService;
 
     public ServicioService(ServicioRepository servicioRepository, ClienteRepository clienteRepository,
-                            TarifaRepository tarifaRepository, EmpleadoRepository empleadoRepository, GeocodingService geocodingService) {
+            TarifaRepository tarifaRepository, EmpleadoRepository empleadoRepository,
+            GeocodingService geocodingService) {
         this.servicioRepository = servicioRepository;
         this.clienteRepository = clienteRepository;
         this.tarifaRepository = tarifaRepository;
@@ -45,7 +46,7 @@ public class ServicioService {
                 .collect(Collectors.toList());
     }
 
-    public List<ServicioResponse> buscarPorRangoFechas (LocalDate desde, LocalDate hasta) {
+    public List<ServicioResponse> buscarPorRangoFechas(LocalDate desde, LocalDate hasta) {
         return servicioRepository.findByFechaBetween(desde, hasta).stream()
                 .map(this::convertir)
                 .collect(Collectors.toList());
@@ -93,8 +94,9 @@ public class ServicioService {
         servicio.setTarifa(tarifa);
         servicio.setDireccion(request.getDireccion());
         servicio.setFecha(request.getFecha());
+        long minutos = Math.round(request.getDuracionHoras() * 60);
         servicio.setHoraInicio(request.getHoraInicio());
-        servicio.setHoraFin(request.getHoraFin());
+        servicio.setHoraFin(request.getHoraInicio().plusMinutes(minutos));
         servicio.setEmpleados(new HashSet<>(empleados));
 
         // Geocodificar la dirección y establecer las coordenadas
@@ -132,4 +134,8 @@ public class ServicioService {
                 .empleados(empleadosResumen)
                 .build();
     }
+
+    public void guardarDirecto(Servicio servicio) {
+    servicioRepository.save(servicio);
+}
 }

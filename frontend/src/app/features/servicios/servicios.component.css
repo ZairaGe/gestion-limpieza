@@ -225,3 +225,38 @@ td {
   background-color: #fef2f2;
   color: #dc2626;
 }
+.header-acciones {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.mensaje-exito {
+  background-color: #d1ede9;
+  color: #0f3d3a;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.dias-selector {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.dia-boton {
+  padding: 0.5rem 0.8rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.dia-boton-activo {
+  background-color: #14b8a6;
+  color: white;
+  border-color: #14b8a6;
+}

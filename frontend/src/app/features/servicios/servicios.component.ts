@@ -9,6 +9,8 @@ import { Servicio, ServicioRequest, EstadoServicio } from '../../core/models/ser
 import { Cliente } from '../../core/models/cliente.model';
 import { Tarifa } from '../../core/models/tarifa.model';
 import { Empleado } from '../../core/models/empleado.model';
+import { ServicioRecurrenteService } from '../../core/services/servicio-recurrente.service';
+import { ServicioRecurrenteRequest, DiaSemana } from '../../core/models/servicio-recurrente.model';
 
 @Component({
   selector: 'app-servicios',
@@ -31,12 +33,16 @@ export class ServiciosComponent implements OnInit {
   servicioEnEdicion: Servicio | null = null;
   formServicio: ServicioRequest = this.servicioVacio();
 
+  modalRecurrenteAbierto = signal(false);
+  mensajeExito = signal<string | null>(null);
+
   constructor(
     private servicioService: ServicioService,
     private clienteService: ClienteService,
     private tarifaService: TarifaService,
-    private empleadoService: EmpleadoService
-  ) {}
+    private empleadoService: EmpleadoService,
+    private servicioRecurrenteService: ServicioRecurrenteService
+  ) { }
 
   ngOnInit(): void {
     this.cargarTodo();
@@ -75,7 +81,7 @@ export class ServiciosComponent implements OnInit {
       direccion: '',
       fecha: '',
       horaInicio: '',
-      horaFin: '',
+      duracionHoras: 1,
       empleadoIds: []
     };
   }
@@ -87,18 +93,25 @@ export class ServiciosComponent implements OnInit {
   }
 
   abrirModalEditar(servicio: Servicio): void {
-  this.servicioEnEdicion = servicio;
-  this.formServicio = {
-    clienteId: servicio.clienteId,
-    tarifaId: servicio.tarifaId,
-    direccion: servicio.direccion,
-    fecha: servicio.fecha,
-    horaInicio: servicio.horaInicio,
-    horaFin: servicio.horaFin,
-    empleadoIds: servicio.empleados.map(e => e.id)
-  };
-  this.modalAbierto.set(true);
-}
+    this.servicioEnEdicion = servicio;
+    this.formServicio = {
+      clienteId: servicio.clienteId,
+      tarifaId: servicio.tarifaId,
+      direccion: servicio.direccion,
+      fecha: servicio.fecha,
+      horaInicio: servicio.horaInicio,
+      duracionHoras: this.calcularDuracionHoras(servicio.horaInicio, servicio.horaFin),
+      empleadoIds: servicio.empleados.map(e => e.id)
+    };
+    this.modalAbierto.set(true);
+  }
+
+  private calcularDuracionHoras(horaInicio: string, horaFin: string): number {
+    const [hI, mI] = horaInicio.split(':').map(Number);
+    const [hF, mF] = horaFin.split(':').map(Number);
+    const minutosTotales = (hF * 60 + mF) - (hI * 60 + mI);
+    return Math.round((minutosTotales / 60) * 4) / 4; // redondea a cuartos de hora
+  }
 
   cerrarModal(): void {
     this.modalAbierto.set(false);
@@ -143,6 +156,71 @@ export class ServiciosComponent implements OnInit {
     this.servicioService.eliminar(id).subscribe({
       next: () => this.cargarTodo(),
       error: () => this.error.set('No se pudo eliminar el servicio')
+    });
+  }
+
+  diasDisponibles: { valor: DiaSemana; etiqueta: string }[] = [
+    { valor: 'LUNES', etiqueta: 'Lunes' },
+    { valor: 'MARTES', etiqueta: 'Martes' },
+    { valor: 'MIERCOLES', etiqueta: 'Miércoles' },
+    { valor: 'JUEVES', etiqueta: 'Jueves' },
+    { valor: 'VIERNES', etiqueta: 'Viernes' },
+    { valor: 'SABADO', etiqueta: 'Sábado' },
+    { valor: 'DOMINGO', etiqueta: 'Domingo' }
+  ];
+
+  formRecurrente: ServicioRecurrenteRequest = this.recurrenteVacio();
+
+  recurrenteVacio(): ServicioRecurrenteRequest {
+    return {
+      clienteId: 0,
+      tarifaId: 0,
+      direccion: '',
+      horaInicio: '',
+      duracionHoras: 2,
+      diasSemana: [],
+      empleadoIds: [],
+      fechaInicio: '',
+      fechaFin: ''
+    };
+  }
+
+  abrirModalRecurrente(): void {
+    this.formRecurrente = this.recurrenteVacio();
+    this.modalRecurrenteAbierto.set(true);
+  }
+
+  cerrarModalRecurrente(): void {
+    this.modalRecurrenteAbierto.set(false);
+  }
+
+  toggleDia(dia: DiaSemana): void {
+    const idx = this.formRecurrente.diasSemana.indexOf(dia);
+    if (idx > -1) {
+      this.formRecurrente.diasSemana.splice(idx, 1);
+    } else {
+      this.formRecurrente.diasSemana.push(dia);
+    }
+  }
+
+  toggleEmpleadoRecurrente(id: number): void {
+    const idx = this.formRecurrente.empleadoIds.indexOf(id);
+    if (idx > -1) {
+      this.formRecurrente.empleadoIds.splice(idx, 1);
+    } else {
+      this.formRecurrente.empleadoIds.push(id);
+    }
+  }
+
+  guardarRecurrente(): void {
+    this.servicioRecurrenteService.crear(this.formRecurrente).subscribe({
+      next: (resultado) => {
+        this.cerrarModalRecurrente();
+        this.mensajeExito.set(`Se generaron ${resultado.serviciosGenerados} servicios correctamente.`);
+        this.cargarTodo();
+        setTimeout(() => this.mensajeExito.set(null), 5000);
+      },
+      error: () => this.error.set('No se pudo crear el servicio recurrente')
     });
   }
 }

@@ -17,6 +17,7 @@ export interface Servicio {
   longitud?: number;
   fecha: string;
   horaInicio: string;
+  duracionHoras: number;
   horaFin: string;
   estado: EstadoServicio;
   empleados: EmpleadoResumen[];
@@ -28,6 +29,7 @@ export interface ServicioRequest {
   direccion: string;
   fecha: string;
   horaInicio: string;
-  horaFin: string;
+  duracionHoras: number;
+  horaFin?: string;
   empleadoIds: number[];
 }

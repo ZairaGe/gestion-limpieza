@@ -5,6 +5,7 @@ import { EmpleadoService } from '../../core/services/empleado.service';
 import { Servicio, ServicioRequest } from '../../core/models/servicio.model';
 import { Empleado } from '../../core/models/empleado.model';
 import { MapaServiciosComponent } from '../../shared/components/mapa-servicios/mapa-servicios.component';
+import { PlanningService } from '../../core/services/planning.service';
 
 interface DiaSemana {
   fecha: string;
@@ -38,7 +39,8 @@ export class DistribucionComponent implements OnInit {
 
   constructor(
     private servicioService: ServicioService,
-    private empleadoService: EmpleadoService
+    private empleadoService: EmpleadoService,
+    private planningService: PlanningService
   ) { }
 
   ngOnInit(): void {
@@ -56,8 +58,11 @@ export class DistribucionComponent implements OnInit {
   }
 
   formatearFecha(fecha: Date): string {
-    return fecha.toISOString().split('T')[0];
-  }
+  const year = fecha.getFullYear();
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+  const dia = fecha.getDate().toString().padStart(2, '0');
+  return `${year}-${mes}-${dia}`;
+}
 
   cargarSemana(): void {
     this.cargando.set(true);
@@ -152,6 +157,7 @@ export class DistribucionComponent implements OnInit {
       direccion: this.servicioSeleccionado.direccion,
       fecha: this.servicioSeleccionado.fecha,
       horaInicio: this.servicioSeleccionado.horaInicio,
+      duracionHoras: this.servicioSeleccionado.duracionHoras,
       horaFin: this.servicioSeleccionado.horaFin,
       empleadoIds: this.empleadosSeleccionados
     };
@@ -207,6 +213,17 @@ export class DistribucionComponent implements OnInit {
 
   seleccionarDia(fecha: string): void {
     this.diaSeleccionado.set(fecha);
+  }
+
+  empleadosDelDia = computed(() => {
+    const servicios = this.servicioDiaSeleccionado();
+    const mapa = new Map<number, string>();
+    servicios.forEach(s => s.empleados.forEach(e => mapa.set(e.id, e.nombre)));
+    return Array.from(mapa.entries()).map(([id, nombre]) => ({ id, nombre }));
+  });
+
+  descargarPlanning(empleadoId: number): void {
+    this.planningService.descargarPlanning(empleadoId, this.diaSeleccionado());
   }
 
 }

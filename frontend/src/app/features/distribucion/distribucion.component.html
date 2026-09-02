@@ -18,7 +18,7 @@
 <div class="semana-grid">
     @for (dia of dias(); track dia.fecha) {
     <div class="dia-columna" [class.dia-hoy]="dia.esHoy" [class.dia-seleccionada]="dia.fecha === diaSeleccionado()">
-        <div class="dia-header">{{ dia.etiqueta }}</div>
+        <div class="dia-header" (click)="seleccionarDia(dia.fecha)">{{ dia.etiqueta }}</div>
 
         <div class="dia-servicios-scroll">
             @if (dia.servicios.length === 0) {
@@ -56,6 +56,22 @@
 <div class="mapa-section">
     <h2>Servicios del {{ etiquetaDiaSeleccionado() }}</h2>
     <app-mapa-servicios [servicios]="servicioDiaSeleccionado()"></app-mapa-servicios>
+</div>
+<div class="planning-section">
+  <h2>Planning del día — descarga por trabajador</h2>
+
+  @if (empleadosDelDia().length === 0) {
+    <p class="empty-mini">Nadie tiene servicios asignados este día todavía.</p>
+  } @else {
+    <div class="planning-lista">
+      @for (emp of empleadosDelDia(); track emp.id) {
+        <div class="planning-item">
+          <span>{{ emp.nombre }}</span>
+          <button class="btn-secondary" (click)="descargarPlanning(emp.id)">⬇ Descargar PDF</button>
+        </div>
+      }
+    </div>
+  }
 </div>
 }
 
