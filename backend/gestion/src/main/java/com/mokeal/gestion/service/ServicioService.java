@@ -110,10 +110,16 @@ public class ServicioService {
     }
 
     private ServicioResponse convertir(Servicio servicio) {
+        double duracionTotalHoras = (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay())
+                / 3600.0;
+        int numEmpleados = servicio.getEmpleados().size();
+        double horasPorEmpleado = numEmpleados > 0 ? duracionTotalHoras / numEmpleados : 0;
+
         Set<ServicioResponse.EmpleadoResumen> empleadosResumen = servicio.getEmpleados().stream()
                 .map(e -> ServicioResponse.EmpleadoResumen.builder()
                         .id(e.getId())
                         .nombre(e.getNombre())
+                        .horasAsignadas(horasPorEmpleado)
                         .build())
                 .collect(Collectors.toSet());
 
@@ -136,6 +142,6 @@ public class ServicioService {
     }
 
     public void guardarDirecto(Servicio servicio) {
-    servicioRepository.save(servicio);
-}
+        servicioRepository.save(servicio);
+    }
 }

@@ -7,7 +7,7 @@ export class PlanningService {
 
   private apiUrl = `${environment.apiUrl}/planning`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   descargarPlanning(empleadoId: number, fecha: string): void {
     this.http.get(`${this.apiUrl}/empleado/${empleadoId}`, {
@@ -22,4 +22,18 @@ export class PlanningService {
       window.URL.revokeObjectURL(url);
     });
   }
+
+  descargarPlanningGeneral(desde: string, hasta: string): void {
+  this.http.get(`${this.apiUrl}/general`, {
+    params: { desde, hasta },
+    responseType: 'blob'
+  }).subscribe(pdfBlob => {
+    const url = window.URL.createObjectURL(pdfBlob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = `planning_${desde}_${hasta}.pdf`;
+    enlace.click();
+    window.URL.revokeObjectURL(url);
+  });
+}
 }

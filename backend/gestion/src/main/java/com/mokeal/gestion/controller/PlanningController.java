@@ -31,4 +31,20 @@ public class PlanningController {
 
         return ResponseEntity.ok().headers(headers).body(pdf);
     }
+
+    @GetMapping("/general")
+    public ResponseEntity<byte[]> descargarPlanningGeneral(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+
+        byte[] pdf = planningService.generarPlanningGeneral(desde, hasta);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.attachment()
+                .filename("planning_" + desde + "_" + hasta + ".pdf")
+                .build());
+
+        return ResponseEntity.ok().headers(headers).body(pdf);
+    }
 }

@@ -1,0 +1,82 @@
+<div class="page-header">
+  <div>
+    <h1>Facturación</h1>
+    <p>Genera facturas a partir de los servicios realizados.</p>
+  </div>
+</div>
+
+@if (mensajeExito()) {
+  <div class="mensaje-exito">{{ mensajeExito() }}</div>
+}
+@if (error()) {
+  <p class="error-message">{{ error() }}</p>
+}
+
+<div class="table-card filtro-card">
+  <div class="form-row">
+    <div class="form-group">
+      <label>Cliente</label>
+      <select [(ngModel)]="clienteId">
+        <option [ngValue]="0" disabled>Selecciona un cliente</option>
+        @for (cliente of clientes(); track cliente.id) {
+          <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Desde</label>
+      <input type="date" [(ngModel)]="desde" />
+    </div>
+
+    <div class="form-group">
+      <label>Hasta</label>
+      <input type="date" [(ngModel)]="hasta" />
+    </div>
+
+    <button class="btn-primary" (click)="buscarPendientes()">Buscar servicios</button>
+  </div>
+</div>
+
+@if (buscando()) {
+  <p class="loading">Buscando servicios...</p>
+} @else if (serviciosPendientes().length > 0) {
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Horario</th>
+          <th>Dirección</th>
+          <th>Importe</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of serviciosPendientes(); track s.id) {
+          <tr>
+            <td>{{ s.fecha }}</td>
+            <td>{{ s.horaInicio }} - {{ s.horaFin }}</td>
+            <td>{{ s.direccion }}</td>
+            <td>{{ s.importe | number: '1.2-2' }} €</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="resumen-generar">
+    <div class="total-importe">
+      Total: <strong>{{ totalImporte() | number: '1.2-2' }} €</strong>
+      <span class="cantidad">({{ serviciosPendientes().length }} servicios)</span>
+    </div>
+
+    <div class="form-group">
+      <label>Fecha de emisión</label>
+      <input type="date" [(ngModel)]="fechaEmision" />
+    </div>
+
+    <button class="btn-primary" [disabled]="generando()" (click)="generarFactura()">
+      {{ generando() ? 'Generando...' : 'Generar factura' }}
+    </button>
+  </div>
+}

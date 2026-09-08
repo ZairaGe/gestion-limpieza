@@ -34,44 +34,59 @@
                 <span class="empleado-chip chip-vacio">Sin asignar</span>
                 } @else {
                 @for (emp of servicio.empleados; track emp.id) {
-                <span class="empleado-chip">{{ emp.nombre }}</span>
+                <span class="empleado-chip"
+                    title="Horas de trabajo imputadas (el servicio dura {{ servicio.horaInicio }} - {{ servicio.horaFin }})">
+                    {{ emp.nombre }} ({{ emp.horasAsignadas | number: '1.1-2' }}h)
+                </span>
                 }
                 }
             </div>
 
-            @if (i < dia.servicios.length - 1) {
-                @let distancia = calcularDistanciaKm(servicio, dia.servicios[i + 1]);
-                @if (distancia !== null) {
-                <div class="distancia-indicador" [class.distancia-lejos]="distancia > 5">
-                    ↓ {{ distancia | number: '1.1-1' }} km
-                </div>
-                }
-            }
-            }
-            }
+            @if (i < dia.servicios.length - 1) { @let distancia=calcularDistanciaKm(servicio, dia.servicios[i + 1]); @if
+                (distancia !==null) { <div class="distancia-indicador" [class.distancia-lejos]="distancia > 5">
+                ↓ {{ distancia | number: '1.1-1' }} km
         </div>
+        }
+        }
+        }
+        }
     </div>
-    }
+</div>
+}
 </div>
 <div class="mapa-section">
     <h2>Servicios del {{ etiquetaDiaSeleccionado() }}</h2>
     <app-mapa-servicios [servicios]="servicioDiaSeleccionado()"></app-mapa-servicios>
 </div>
 <div class="planning-section">
-  <h2>Planning del día — descarga por trabajador</h2>
+    <h2>Planning del día — descarga por trabajador</h2>
 
-  @if (empleadosDelDia().length === 0) {
+    @if (empleadosDelDia().length === 0) {
     <p class="empty-mini">Nadie tiene servicios asignados este día todavía.</p>
-  } @else {
+    } @else {
     <div class="planning-lista">
-      @for (emp of empleadosDelDia(); track emp.id) {
+        @for (emp of empleadosDelDia(); track emp.id) {
         <div class="planning-item">
-          <span>{{ emp.nombre }}</span>
-          <button class="btn-secondary" (click)="descargarPlanning(emp.id)">⬇ Descargar PDF</button>
+            <span>{{ emp.nombre }}</span>
+            <button class="btn-secondary" (click)="descargarPlanning(emp.id)">⬇ Descargar PDF</button>
         </div>
-      }
+        }
     </div>
-  }
+    }
+</div>
+<div class="planning-section">
+    <h2>Descargar planning por rango de fechas</h2>
+    <div class="rango-form">
+        <div class="form-group">
+            <label>Desde</label>
+            <input type="date" [(ngModel)]="rangoDesde" />
+        </div>
+        <div class="form-group">
+            <label>Hasta</label>
+            <input type="date" [(ngModel)]="rangoHasta" />
+        </div>
+        <button class="btn-primary" (click)="descargarPlanningGeneral()">⬇ Descargar PDF</button>
+    </div>
 </div>
 }
 

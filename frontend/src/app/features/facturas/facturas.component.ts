@@ -2,9 +2,9 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FacturaService } from '../../core/services/factura.service';
-import { ServicioService } from '../../core/services/servicio.service';
-import { Factura, FacturaRequest } from '../../core/models/factura.model';
-import { Servicio } from '../../core/models/servicio.model';
+import { ClienteService } from '../../core/services/cliente.service';
+import { Factura } from '../../core/models/factura.model';
+import { Cliente } from '../../core/models/cliente.model';
 
 @Component({
   selector: 'app-facturas',
@@ -16,35 +16,29 @@ import { Servicio } from '../../core/models/servicio.model';
 export class FacturasComponent implements OnInit {
 
   facturas = signal<Factura[]>([]);
-  servicios = signal<Servicio[]>([]);
-
+  clientes = signal<Cliente[]>([]);
   cargando = signal(true);
   error = signal<string | null>(null);
 
-  modalAbierto = signal(false);
-  formFactura: FacturaRequest = this.facturaVacia();
+  filtroClienteId = 0;
 
   constructor(
     private facturaService: FacturaService,
-    private servicioService: ServicioService
+    private clienteService: ClienteService
   ) {}
 
   ngOnInit(): void {
-    this.cargarTodo();
+    this.clienteService.listar().subscribe(data => this.clientes.set(data));
+    this.cargarFacturas();
   }
 
-  cargarTodo(): void {
+  cargarFacturas(): void {
     this.cargando.set(true);
-    this.facturaService.listar().subscribe({
+    const id = this.filtroClienteId > 0 ? this.filtroClienteId : undefined;
+    this.facturaService.listar(id).subscribe({
       next: (data) => {
         this.facturas.set(data);
-        this.servicioService.listar().subscribe({
-          next: (servicios) => {
-            this.servicios.set(servicios);
-            this.cargando.set(false);
-          },
-          error: () => this.cargando.set(false)
-        });
+        this.cargando.set(false);
       },
       error: () => {
         this.error.set('No se pudieron cargar las facturas');
@@ -53,52 +47,19 @@ export class FacturasComponent implements OnInit {
     });
   }
 
-  facturaVacia(): FacturaRequest {
-    return { servicioId: 0, numero: '', importe: 0, fechaEmision: '' };
-  }
-
-  serviciosSinFactura(): Servicio[] {
-    const idsFacturados = this.facturas().map(f => f.servicioId);
-    return this.servicios().filter(s => !idsFacturados.includes(s.id!));
-  }
-
-  abrirModalCrear(): void {
-    this.formFactura = this.facturaVacia();
-    this.modalAbierto.set(true);
-  }
-
-  cerrarModal(): void {
-    this.modalAbierto.set(false);
-  }
-
-  guardarFactura(): void {
-    this.facturaService.crear(this.formFactura).subscribe({
-      next: () => {
-        this.cerrarModal();
-        this.cargarTodo();
-      },
-      error: (err) => this.error.set(err.error?.error ?? 'No se pudo crear la factura')
-    });
-  }
-
   marcarComoPagada(id: number): void {
     this.facturaService.marcarComoPagada(id).subscribe({
-      next: () => this.cargarTodo(),
+      next: () => this.cargarFacturas(),
       error: () => this.error.set('No se pudo actualizar la factura')
     });
   }
 
   eliminarFactura(id: number): void {
-    if (!confirm('¿Seguro que quieres eliminar esta factura?')) return;
+    if (!confirm('¿Seguro que quieres eliminar esta factura? Los servicios volverán a quedar sin facturar.')) return;
 
     this.facturaService.eliminar(id).subscribe({
-      next: () => this.cargarTodo(),
+      next: () => this.cargarFacturas(),
       error: () => this.error.set('No se pudo eliminar la factura')
     });
-  }
-
-  nombreServicio(servicioId: number): string {
-    const servicio = this.servicios().find(s => s.id === servicioId);
-    return servicio ? `${servicio.clienteNombre} — ${servicio.fecha}` : `Servicio #${servicioId}`;
   }
 }

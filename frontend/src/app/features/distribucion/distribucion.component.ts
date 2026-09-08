@@ -6,6 +6,8 @@ import { Servicio, ServicioRequest } from '../../core/models/servicio.model';
 import { Empleado } from '../../core/models/empleado.model';
 import { MapaServiciosComponent } from '../../shared/components/mapa-servicios/mapa-servicios.component';
 import { PlanningService } from '../../core/services/planning.service';
+import { FormsModule } from '@angular/forms';
+
 
 interface DiaSemana {
   fecha: string;
@@ -17,7 +19,7 @@ interface DiaSemana {
 @Component({
   selector: 'app-distribucion',
   standalone: true,
-  imports: [CommonModule, MapaServiciosComponent],
+  imports: [CommonModule, MapaServiciosComponent, FormsModule],
   templateUrl: './distribucion.component.html',
   styleUrl: './distribucion.component.css'
 })
@@ -36,6 +38,10 @@ export class DistribucionComponent implements OnInit {
 
   serviciosSemana = signal<Servicio[]>([]);
   diaSeleccionado = signal<string>(this.formatearFecha(new Date()));
+
+  rangoDesde = this.formatearFecha(this.inicioSemana);
+  rangoHasta = '';
+  incluirMapaEnPdf = true;
 
   constructor(
     private servicioService: ServicioService,
@@ -58,11 +64,11 @@ export class DistribucionComponent implements OnInit {
   }
 
   formatearFecha(fecha: Date): string {
-  const year = fecha.getFullYear();
-  const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-  const dia = fecha.getDate().toString().padStart(2, '0');
-  return `${year}-${mes}-${dia}`;
-}
+    const year = fecha.getFullYear();
+    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+    const dia = fecha.getDate().toString().padStart(2, '0');
+    return `${year}-${mes}-${dia}`;
+  }
 
   cargarSemana(): void {
     this.cargando.set(true);
@@ -157,8 +163,7 @@ export class DistribucionComponent implements OnInit {
       direccion: this.servicioSeleccionado.direccion,
       fecha: this.servicioSeleccionado.fecha,
       horaInicio: this.servicioSeleccionado.horaInicio,
-      duracionHoras: this.servicioSeleccionado.duracionHoras,
-      horaFin: this.servicioSeleccionado.horaFin,
+      duracionHoras: this.calcularDuracionHoras(this.servicioSeleccionado.horaInicio, this.servicioSeleccionado.horaFin),
       empleadoIds: this.empleadosSeleccionados
     };
 
@@ -225,5 +230,17 @@ export class DistribucionComponent implements OnInit {
   descargarPlanning(empleadoId: number): void {
     this.planningService.descargarPlanning(empleadoId, this.diaSeleccionado());
   }
+
+  private calcularDuracionHoras(horaInicio: string, horaFin: string): number {
+    const [hI, mI] = horaInicio.split(':').map(Number);
+    const [hF, mF] = horaFin.split(':').map(Number);
+    const minutosTotales = (hF * 60 + mF) - (hI * 60 + mI);
+    return Math.round((minutosTotales / 60) * 4) / 4;
+  }
+
+  descargarPlanningGeneral(): void {
+  if (!this.rangoDesde || !this.rangoHasta) return;
+  this.planningService.descargarPlanningGeneral(this.rangoDesde, this.rangoHasta);
+}
 
 }

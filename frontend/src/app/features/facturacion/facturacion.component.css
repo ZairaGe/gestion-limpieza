@@ -191,7 +191,43 @@ td {
   background-color: #e5e7eb;
 }
 
-.filtro-cliente {
-  max-width: 300px;
+.filtro-card {
+  padding: 1.2rem;
   margin-bottom: 1.5rem;
+}
+
+.filtro-card .form-row {
+  align-items: flex-end;
+}
+
+.mensaje-exito {
+  background-color: #d1ede9;
+  color: #0f3d3a;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.resumen-generar {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.total-importe {
+  font-size: 1.2rem;
+  color: #0f3d3a;
+}
+
+.total-importe .cantidad {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-left: 0.5rem;
 }

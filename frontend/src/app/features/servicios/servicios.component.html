@@ -46,7 +46,12 @@
                     @if (servicio.empleados.length === 0) {
                     <span class="badge chip-vacio">Sin asignar</span>
                     } @else {
-                    {{ servicio.empleados.map(e => e.nombre).join(', ') }}
+                    @for (emp of servicio.empleados; track emp.id) {
+                    <span class="empleado-chip"
+                        title="Horas de trabajo imputadas (el servicio dura {{ servicio.horaInicio }} - {{ servicio.horaFin }})">
+                        {{ emp.nombre }} ({{ emp.horasAsignadas | number: '1.1-2' }}h)
+                    </span>
+                    }
                     }
                 </td>
                 <td>

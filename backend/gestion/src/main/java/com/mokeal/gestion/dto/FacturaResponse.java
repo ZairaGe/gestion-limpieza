@@ -9,9 +9,11 @@ import java.time.LocalDate;
 @Builder
 public class FacturaResponse {
     private Long id;
-    private Long servicioId;
+    private Long clienteId;
+    private String clienteNombre;
     private String numero;
     private BigDecimal importe;
     private EstadoFactura estado;
     private LocalDate fechaEmision;
+    private int cantidadServicios;
 }

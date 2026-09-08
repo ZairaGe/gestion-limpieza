@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Factura, FacturaRequest } from '../models/factura.model';
+import { Factura } from '../models/factura.model';
 
 @Injectable({ providedIn: 'root' })
 export class FacturaService {
@@ -11,13 +11,13 @@ export class FacturaService {
 
   constructor(private http: HttpClient) {}
 
-  listar(): Observable<Factura[]> {
-    return this.http.get<Factura[]>(this.apiUrl);
+  listar(clienteId?: number): Observable<Factura[]> {
+  let params: Record<string, string | number> = {};
+  if (clienteId) {
+    params = { clienteId };
   }
-
-  crear(factura: FacturaRequest): Observable<Factura> {
-    return this.http.post<Factura>(this.apiUrl, factura);
-  }
+  return this.http.get<Factura[]>(this.apiUrl, { params });
+}
 
   marcarComoPagada(id: number): Observable<Factura> {
     return this.http.patch<Factura>(`${this.apiUrl}/${id}/pagar`, {});

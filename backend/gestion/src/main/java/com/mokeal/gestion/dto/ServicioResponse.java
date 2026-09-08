@@ -29,5 +29,6 @@ public class ServicioResponse {
     public static class EmpleadoResumen {
         private Long id;
         private String nombre;
+        private Double horasAsignadas;
     }
 }

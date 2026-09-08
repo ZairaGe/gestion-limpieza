@@ -3,6 +3,7 @@ export type EstadoServicio = 'PENDIENTE' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCEL
 export interface EmpleadoResumen {
   id: number;
   nombre: string;
+  horasAsignadas?: number;
 }
 
 export interface Servicio {

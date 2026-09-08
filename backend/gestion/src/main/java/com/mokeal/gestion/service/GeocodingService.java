@@ -44,7 +44,7 @@ public class GeocodingService {
             String url = "https://nominatim.openstreetmap.org/search?q=" + direccionCodificada + "&format=json&limit=1";
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("User-Agent", "LimpiaGest/1.0 (app de gestion Mokeal)");
+            headers.set("User-Agent", "Mokeal/1.0 (app de gestion Mokeal)");
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<String> respuesta = restTemplate.exchange(URI.create(url), HttpMethod.GET, entity, String.class);

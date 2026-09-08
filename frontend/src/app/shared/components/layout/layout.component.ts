@@ -18,7 +18,8 @@ export class LayoutComponent {
     { label: 'Clientes', ruta: '/clientes', icono: '👥' },
     { label: 'Empleados', ruta: '/empleados', icono: '👤' },
     { label: 'Tarifas', ruta: '/tarifas', icono: '🏷' },
-    { label: 'Facturas', ruta: '/facturas', icono: '🧾' }
+    { label: 'Facturas', ruta: '/facturas', icono: '🧾' },
+    { label: 'Facturación', ruta: '/facturacion', icono: '💰' },
   ];
 
   constructor(public authService: AuthService) {}

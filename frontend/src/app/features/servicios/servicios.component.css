@@ -260,3 +260,12 @@ td {
   color: white;
   border-color: #14b8a6;
 }
+.empleado-chip {
+  display: inline-block;
+  background-color: #d1ede9;
+  color: #0f3d3a;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  margin: 0.1rem 0.2rem 0.1rem 0;
+}

@@ -10,8 +10,10 @@ import java.util.Set;
 
 @Entity
 @Table(name = "servicio")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Servicio {
 
@@ -54,12 +56,12 @@ public class Servicio {
     @Column(nullable = false)
     private EstadoServicio estado = EstadoServicio.PENDIENTE;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "factura_id")
+    private Factura factura;
+
     @ManyToMany
-    @JoinTable(
-        name = "servicio_empleado",
-        joinColumns = @JoinColumn(name = "servicio_id"),
-        inverseJoinColumns = @JoinColumn(name = "empleado_id")
-    )
+    @JoinTable(name = "servicio_empleado", joinColumns = @JoinColumn(name = "servicio_id"), inverseJoinColumns = @JoinColumn(name = "empleado_id"))
     @Builder.Default
     private Set<Empleado> empleados = new HashSet<>();
 }
