@@ -29,6 +29,7 @@
                 <th>Cliente</th>
                 <th>Fecha</th>
                 <th>Horario</th>
+                <th>Duración</th>
                 <th>Dirección</th>
                 <th>Empleados</th>
                 <th>Estado</th>
@@ -41,6 +42,7 @@
                 <td>{{ servicio.clienteNombre }}</td>
                 <td>{{ servicio.fecha }}</td>
                 <td>{{ servicio.horaInicio }} - {{ servicio.horaFin }}</td>
+                <td>{{ servicio.duracionHoras | number: '1.1-2' }}h</td>
                 <td>{{ servicio.direccion }}</td>
                 <td>
                     @if (servicio.empleados.length === 0) {
@@ -55,7 +57,12 @@
                     }
                 </td>
                 <td>
-                    <span class="badge">{{ servicio.estado }}</span>
+                    <select class="estado-select" [ngModel]="servicio.estado"
+                        (ngModelChange)="cambiarEstado(servicio, $event)">
+                        @for (estado of estadosDisponibles; track estado) {
+                        <option [value]="estado">{{ estado }}</option>
+                        }
+                    </select>
                 </td>
                 <td class="acciones">
                     <button class="btn-icon" title="Editar" (click)="abrirModalEditar(servicio)">✎</button>

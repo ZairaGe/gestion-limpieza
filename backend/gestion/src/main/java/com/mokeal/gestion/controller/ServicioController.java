@@ -2,6 +2,7 @@ package com.mokeal.gestion.controller;
 
 import com.mokeal.gestion.dto.ServicioRequest;
 import com.mokeal.gestion.dto.ServicioResponse;
+import com.mokeal.gestion.model.EstadoServicio;
 import com.mokeal.gestion.service.ServicioService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/servicios")
@@ -25,13 +27,17 @@ public class ServicioController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
-            @RequestParam(required = false) Long empleadoId) {
+            @RequestParam(required = false) Long empleadoId,
+            @RequestParam(required = false) Long clienteId) {
 
+        if (clienteId != null && desde != null && hasta != null) {
+            return servicioService.buscarPorClienteYRango(clienteId, desde, hasta);
+        }
 
         if (desde != null && hasta != null) {
             return servicioService.buscarPorRangoFechas(desde, hasta);
         }
-        
+
         if (fecha != null) {
             return servicioService.buscarPorFecha(fecha);
         }
@@ -61,5 +67,21 @@ public class ServicioController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         servicioService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/marcar-pagado")
+    public ServicioResponse marcarPagado(@PathVariable Long id) {
+        return servicioService.marcarPagado(id);
+    }
+
+    @PatchMapping("/{id}/marcar-pendiente")
+    public ServicioResponse marcarPendiente(@PathVariable Long id) {
+        return servicioService.marcarPendiente(id);
+    }
+
+    @PatchMapping("/{id}/estado")
+    public ServicioResponse cambiarEstado(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        EstadoServicio nuevoEstado = EstadoServicio.valueOf(body.get("estado"));
+        return servicioService.cambiarEstado(id, nuevoEstado);
     }
 }

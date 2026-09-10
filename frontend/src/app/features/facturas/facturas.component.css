@@ -30,7 +30,8 @@
   background-color: #0d9488;
 }
 
-.loading, .error-message {
+.loading,
+.error-message {
   color: #6b7280;
 }
 
@@ -194,4 +195,50 @@ td {
 .filtro-cliente {
   max-width: 300px;
   margin-bottom: 1.5rem;
+}
+
+.resumen-generar {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.total-importe {
+  font-size: 1.1rem;
+  color: #0f3d3a;
+}
+
+.desglose {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+  min-width: 220px;
+}
+
+.desglose .total-final {
+  font-size: 1.1rem;
+  color: #0f3d3a;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.descuento-input {
+  margin: 0.3rem 0;
+}
+
+.descuento-input input {
+  width: 100px;
+}
+
+.linea-descuento {
+  color: #dc2626;
 }

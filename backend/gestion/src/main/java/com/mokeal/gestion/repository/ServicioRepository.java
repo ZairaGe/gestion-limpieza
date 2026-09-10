@@ -17,6 +17,7 @@ public interface ServicioRepository extends JpaRepository<Servicio, Long> {
     long countByFecha(LocalDate fecha);
 
     List<Servicio> findByFechaBetween(LocalDate inicio, LocalDate fin);
+    List<Servicio> findByClienteIdAndFechaBetween(Long clienteId, LocalDate desde, LocalDate hasta);
 
     List<Servicio> findByClienteIdAndFechaBetweenAndFacturaIsNull(Long clienteId, LocalDate desde, LocalDate hasta);
 

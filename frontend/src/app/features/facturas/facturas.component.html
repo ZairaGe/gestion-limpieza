@@ -1,64 +1,156 @@
 <div class="page-header">
   <div>
     <h1>Facturas</h1>
-    <p>Consulta y gestiona las facturas emitidas.</p>
+    <p>Genera y consulta las facturas emitidas.</p>
+  </div>
+  <button class="btn-primary" (click)="toggleGeneracion()">
+    {{ mostrarGeneracion() ? 'Cancelar' : '+ Generar factura' }}
+  </button>
+</div>
+
+@if (mensajeExito()) {
+<div class="mensaje-exito">{{ mensajeExito() }}</div>
+}
+@if (error()) {
+<p class="error-message">{{ error() }}</p>
+}
+
+@if (mostrarGeneracion()) {
+<div class="table-card filtro-card">
+  <div class="form-row">
+    <div class="form-group">
+      <label>Cliente</label>
+      <select [(ngModel)]="clienteIdGen">
+        <option [ngValue]="0" disabled>Selecciona un cliente</option>
+        @for (cliente of clientes(); track cliente.id) {
+        <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Desde</label>
+      <input type="date" [(ngModel)]="desdeGen" />
+    </div>
+    <div class="form-group">
+      <label>Hasta</label>
+      <input type="date" [(ngModel)]="hastaGen" />
+    </div>
+    <button class="btn-secondary" (click)="buscarPendientes()">Buscar servicios sin facturar</button>
   </div>
 </div>
+
+@if (buscandoPendientes()) {
+<p class="loading">Buscando servicios...</p>
+} @else if (serviciosPendientes().length > 0) {
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Fecha</th>
+        <th>Horario</th>
+        <th>Dirección</th>
+        <th>Importe</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (s of serviciosPendientes(); track s.id) {
+      <tr>
+        <td><input type="checkbox" [checked]="estaSeleccionado(s.id)" (change)="toggleSeleccion(s.id)" /></td>
+        <td>{{ s.fecha }}</td>
+        <td>{{ s.horaInicio }} - {{ s.horaFin }}</td>
+        <td>{{ s.direccion }}</td>
+        <td>{{ s.importe | number: '1.2-2' }} €</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="resumen-generar">
+  <div class="desglose">
+    <div>Subtotal: <strong>{{ subtotalPreview() | number: '1.2-2' }} €</strong></div>
+    <div class="form-group descuento-input">
+      <label>Descuento (%)</label>
+      <input type="number" min="0" max="100" step="1" [(ngModel)]="descuentoPorcentaje" />
+    </div>
+    @if (descuentoPorcentaje > 0) {
+    <div class="linea-descuento">Descuento: -{{ descuentoPreview() | number: '1.2-2' }} €</div>
+    }
+    <div>IVA (21%): {{ ivaPreview() | number: '1.2-2' }} €</div>
+    <div class="total-final">Total: <strong>{{ totalPreview() | number: '1.2-2' }} €</strong></div>
+  </div>
+
+  <div class="form-group">
+    <label>Nº factura (opcional)</label>
+    <input type="text" [(ngModel)]="numeroManual" placeholder="Se autogenera si se deja vacío" />
+  </div>
+  <div class="form-group">
+    <label>Fecha de emisión</label>
+    <input type="date" [(ngModel)]="fechaEmision" />
+  </div>
+  <button class="btn-primary" [disabled]="generando()" (click)="generarFactura()">
+    {{ generando() ? 'Generando...' : 'Generar factura' }}
+  </button>
+</div>
+} @else if (desdeGen && hastaGen) {
+<p class="empty-mini">No hay servicios sin facturar para este cliente en ese rango.</p>
+}
+}
 
 <div class="form-group filtro-cliente">
   <label>Filtrar por cliente</label>
   <select [(ngModel)]="filtroClienteId" (ngModelChange)="cargarFacturas()">
     <option [ngValue]="0">Todos los clientes</option>
     @for (cliente of clientes(); track cliente.id) {
-      <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
+    <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
     }
   </select>
 </div>
 
 @if (cargando()) {
-  <p class="loading">Cargando facturas...</p>
-} @else if (error()) {
-  <p class="error-message">{{ error() }}</p>
+<p class="loading">Cargando facturas...</p>
 } @else if (facturas().length === 0) {
-  <div class="empty-state">
-    <p>No hay facturas para este filtro.</p>
-  </div>
+<div class="empty-state">
+  <p>No hay facturas para este filtro.</p>
+</div>
 } @else {
-  <div class="table-card">
-    <table>
-      <thead>
-        <tr>
-          <th>Número</th>
-          <th>Cliente</th>
-          <th>Servicios</th>
-          <th>Importe</th>
-          <th>Fecha emisión</th>
-          <th>Estado</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (factura of facturas(); track factura.id) {
-          <tr>
-            <td>{{ factura.numero }}</td>
-            <td>{{ factura.clienteNombre }}</td>
-            <td>{{ factura.cantidadServicios }}</td>
-            <td>{{ factura.importe | number: '1.2-2' }} €</td>
-            <td>{{ factura.fechaEmision }}</td>
-            <td>
-              <span class="badge" [class.badge-empresa]="factura.estado === 'PAGADA'">
-                {{ factura.estado }}
-              </span>
-            </td>
-            <td class="acciones">
-              @if (factura.estado === 'PENDIENTE') {
-                <button class="btn-icon" title="Marcar como pagada" (click)="marcarComoPagada(factura.id!)">✓</button>
-              }
-              <button class="btn-icon btn-danger" title="Eliminar" (click)="eliminarFactura(factura.id!)">🗑</button>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Número</th>
+        <th>Cliente</th>
+        <th>Servicios</th>
+        <th>Importe</th>
+        <th>Fecha emisión</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (factura of facturas(); track factura.id) {
+      <tr>
+        <td>{{ factura.numero }}</td>
+        <td>{{ factura.clienteNombre }}</td>
+        <td>{{ factura.cantidadServicios }}</td>
+        <td>{{ factura.importe | number: '1.2-2' }} €</td>
+        <td>{{ factura.fechaEmision }}</td>
+        <td>
+          <span class="badge" [class.badge-empresa]="factura.estado === 'PAGADA'">
+            {{ factura.estado }}
+          </span>
+        </td>
+        <td class="acciones">
+          <button class="btn-icon" title="Descargar PDF" (click)="descargarPdf(factura)">⬇</button>
+          @if (factura.estado === 'PENDIENTE') {
+          <button class="btn-icon" title="Marcar como pagada" (click)="marcarComoPagada(factura.id!)">✓</button>
+          }
+          <button class="btn-icon btn-danger" title="Eliminar" (click)="eliminarFactura(factura.id!)">🗑</button>
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</div>
 }

@@ -30,7 +30,8 @@
   background-color: #0d9488;
 }
 
-.loading, .error-message {
+.loading,
+.error-message {
   color: #6b7280;
 }
 
@@ -225,6 +226,7 @@ td {
   background-color: #fef2f2;
   color: #dc2626;
 }
+
 .header-acciones {
   display: flex;
   gap: 0.6rem;
@@ -260,6 +262,7 @@ td {
   color: white;
   border-color: #14b8a6;
 }
+
 .empleado-chip {
   display: inline-block;
   background-color: #d1ede9;
@@ -268,4 +271,13 @@ td {
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
   margin: 0.1rem 0.2rem 0.1rem 0;
+}
+
+.estado-select {
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  font-size: 0.8rem;
+  background-color: #f3f4f6;
+  color: #374151;
 }

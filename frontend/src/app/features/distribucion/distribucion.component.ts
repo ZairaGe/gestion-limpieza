@@ -163,7 +163,7 @@ export class DistribucionComponent implements OnInit {
       direccion: this.servicioSeleccionado.direccion,
       fecha: this.servicioSeleccionado.fecha,
       horaInicio: this.servicioSeleccionado.horaInicio,
-      duracionHoras: this.calcularDuracionHoras(this.servicioSeleccionado.horaInicio, this.servicioSeleccionado.horaFin),
+      duracionHoras: this.servicioSeleccionado.duracionHoras ?? this.calcularDuracionHoras(this.servicioSeleccionado.horaInicio, this.servicioSeleccionado.horaFin),
       empleadoIds: this.empleadosSeleccionados
     };
 
@@ -239,8 +239,8 @@ export class DistribucionComponent implements OnInit {
   }
 
   descargarPlanningGeneral(): void {
-  if (!this.rangoDesde || !this.rangoHasta) return;
-  this.planningService.descargarPlanningGeneral(this.rangoDesde, this.rangoHasta);
-}
+    if (!this.rangoDesde || !this.rangoHasta) return;
+    this.planningService.descargarPlanningGeneral(this.rangoDesde, this.rangoHasta);
+  }
 
 }

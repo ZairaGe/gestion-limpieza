@@ -2,6 +2,7 @@ package com.mokeal.gestion.controller;
 
 import com.mokeal.gestion.dto.FacturaResponse;
 import com.mokeal.gestion.service.FacturaService;
+import com.mokeal.gestion.service.FacturaPdfService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -12,8 +13,11 @@ public class FacturaController {
 
     private final FacturaService facturaService;
 
-    public FacturaController(FacturaService facturaService) {
+    private final FacturaPdfService facturaPdfService;
+
+    public FacturaController(FacturaService facturaService, FacturaPdfService facturaPdfService) {
         this.facturaService = facturaService;
+        this.facturaPdfService = facturaPdfService;
     }
 
     @GetMapping
@@ -39,4 +43,16 @@ public class FacturaController {
         facturaService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{id}/pdf")
+public ResponseEntity<byte[]> descargarPdf(@PathVariable Long id) {
+    byte[] pdf = facturaPdfService.generarPdf(id);
+
+    org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+    headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+    headers.setContentDisposition(org.springframework.http.ContentDisposition.attachment()
+            .filename("factura.pdf").build());
+
+    return ResponseEntity.ok().headers(headers).body(pdf);
+}
 }

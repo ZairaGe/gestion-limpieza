@@ -26,7 +26,9 @@
             } @else {
             @for (servicio of dia.servicios; track servicio.id; let i = $index) {
             <div class="servicio-card" (click)="abrirAsignacion(servicio)">
-                <div class="servicio-hora">{{ servicio.horaInicio }} - {{ servicio.horaFin }}</div>
+                
+                <div class="servicio-hora">{{ servicio.horaInicio }} - {{ servicio.horaFin }} · {{
+                    servicio.duracionHoras | number: '1.1-2' }}h contratadas</div>
                 <div class="servicio-cliente">{{ servicio.clienteNombre }}</div>
                 <div class="servicio-direccion">{{ servicio.direccion }}</div>
 

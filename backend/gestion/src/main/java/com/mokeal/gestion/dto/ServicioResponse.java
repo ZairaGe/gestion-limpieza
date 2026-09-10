@@ -2,6 +2,8 @@ package com.mokeal.gestion.dto;
 
 import com.mokeal.gestion.model.EstadoServicio;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Set;
@@ -22,6 +24,10 @@ public class ServicioResponse {
     private EstadoServicio estado;
     private Double latitud;
     private Double longitud;
+    private Boolean pagado;
+    private LocalDate fechaPago;
+    private BigDecimal importe;
+    private Double duracionHoras;
     private Set<EmpleadoResumen> empleados;
 
     @Data

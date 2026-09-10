@@ -9,7 +9,7 @@ export class ServicioService {
 
   private apiUrl = `${environment.apiUrl}/servicios`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   listarPorRango(desde: string, hasta: string): Observable<Servicio[]> {
     return this.http.get<Servicio[]>(this.apiUrl, { params: { desde, hasta } });
@@ -33,5 +33,21 @@ export class ServicioService {
 
   eliminar(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  listarPorClienteYRango(clienteId: number, desde: string, hasta: string): Observable<Servicio[]> {
+    return this.http.get<Servicio[]>(this.apiUrl, { params: { clienteId, desde, hasta } });
+  }
+
+  marcarPagado(id: number): Observable<Servicio> {
+    return this.http.patch<Servicio>(`${this.apiUrl}/${id}/marcar-pagado`, {});
+  }
+
+  marcarPendiente(id: number): Observable<Servicio> {
+    return this.http.patch<Servicio>(`${this.apiUrl}/${id}/marcar-pendiente`, {});
+  }
+
+  cambiarEstado(id: number, estado: string): Observable<Servicio> {
+    return this.http.patch<Servicio>(`${this.apiUrl}/${id}/estado`, { estado });
   }
 }
