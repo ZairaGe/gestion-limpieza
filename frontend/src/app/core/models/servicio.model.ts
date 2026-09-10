@@ -22,6 +22,9 @@ export interface Servicio {
   horaFin: string;
   estado: EstadoServicio;
   empleados: EmpleadoResumen[];
+  pagado?: boolean;
+  fechaPago?: string;
+  importe?: number;
 }
 
 export interface ServicioRequest {

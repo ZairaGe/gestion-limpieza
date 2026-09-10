@@ -21,7 +21,7 @@ public class FacturacionService {
     private final FacturaRepository facturaRepository;
 
     public FacturacionService(ServicioRepository servicioRepository, ClienteRepository clienteRepository,
-                               FacturaRepository facturaRepository) {
+            FacturaRepository facturaRepository) {
         this.servicioRepository = servicioRepository;
         this.clienteRepository = clienteRepository;
         this.facturaRepository = facturaRepository;
@@ -56,20 +56,32 @@ public class FacturacionService {
         Cliente cliente = clienteRepository.findById(request.getClienteId())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
-        List<Servicio> servicios = servicioRepository
-                .findByClienteIdAndFechaBetweenAndFacturaIsNull(request.getClienteId(), request.getDesde(), request.getHasta());
+        List<Servicio> servicios = servicioRepository.findAllById(request.getServicioIds());
 
         if (servicios.isEmpty()) {
-            throw new RuntimeException("No hay servicios sin facturar para ese cliente en ese rango de fechas");
+            throw new RuntimeException("No se encontraron los servicios seleccionados");
+        }
+
+        for (Servicio s : servicios) {
+            if (s.getFactura() != null) {
+                throw new RuntimeException("El servicio del " + s.getFecha() + " ya está facturado");
+            }
+            if (!s.getCliente().getId().equals(request.getClienteId())) {
+                throw new RuntimeException("Todos los servicios deben ser del mismo cliente");
+            }
         }
 
         BigDecimal total = servicios.stream()
                 .map(this::calcularCoste)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        String numeroFinal = (request.getNumero() != null && !request.getNumero().isBlank())
+                ? request.getNumero()
+                : generarNumero();
+
         Factura factura = Factura.builder()
                 .cliente(cliente)
-                .numero(generarNumero())
+                .numero(numeroFinal)
                 .importe(total)
                 .fechaEmision(request.getFechaEmision())
                 .build();
@@ -89,8 +101,10 @@ public class FacturacionService {
         if (tarifa.getPrecioFijo() != null) {
             return tarifa.getPrecioFijo();
         }
-        double duracionHoras = (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;
-        return tarifa.getPrecioHora().multiply(BigDecimal.valueOf(duracionHoras));
+        double duracion = servicio.getDuracionHoras() != null
+                ? servicio.getDuracionHoras()
+                : (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;
+        return tarifa.getPrecioHora().multiply(BigDecimal.valueOf(duracion));
     }
 
     private String generarNumero() {

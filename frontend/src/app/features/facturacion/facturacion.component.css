@@ -231,3 +231,21 @@ td {
   color: #9ca3af;
   margin-left: 0.5rem;
 }
+
+.filtro-card {
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.resumen-pagos {
+  display: flex;
+  gap: 2rem;
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.cobrado strong { color: #14b8a6; }
+.pendiente strong { color: #dc2626; }

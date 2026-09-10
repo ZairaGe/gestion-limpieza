@@ -35,6 +35,8 @@ public class Servicio {
     @Column(nullable = false, length = 255)
     private String direccion;
 
+    private Double duracionHoras;
+
     private Double latitud;
 
     private Double longitud;
@@ -59,6 +61,11 @@ public class Servicio {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "factura_id")
     private Factura factura;
+
+    @Column(nullable = false)
+    private boolean pagado;
+
+    private LocalDate fechaPago;
 
     @ManyToMany
     @JoinTable(name = "servicio_empleado", joinColumns = @JoinColumn(name = "servicio_id"), inverseJoinColumns = @JoinColumn(name = "empleado_id"))

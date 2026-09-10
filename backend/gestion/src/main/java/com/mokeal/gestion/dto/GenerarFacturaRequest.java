@@ -3,6 +3,7 @@ package com.mokeal.gestion.dto;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class GenerarFacturaRequest {
@@ -10,11 +11,10 @@ public class GenerarFacturaRequest {
     @NotNull(message = "El cliente es obligatorio")
     private Long clienteId;
 
-    @NotNull(message = "La fecha desde es obligatoria")
-    private LocalDate desde;
+    @NotEmpty(message = "Debe seleccionar al menos un servicio")
+    private List<Long> servicioIds;
 
-    @NotNull(message = "La fecha hasta es obligatoria")
-    private LocalDate hasta;
+    private String numero;
 
     @NotNull(message = "La fecha de emisión es obligatoria")
     private LocalDate fechaEmision;

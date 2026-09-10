@@ -162,11 +162,8 @@ public class PlanningService {
     }
 
     private double calcularHorasPorEmpleado(Servicio servicio) {
-        int numEmpleados = servicio.getEmpleados().size();
-        if (numEmpleados == 0)
-            return 0;
-        return calcularDuracionHoras(servicio) / numEmpleados;
-    }
+    return (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;
+}
 
     private Cell celdaCabecera(String texto) {
         return new Cell().add(new Paragraph(texto).setBold())

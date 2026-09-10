@@ -100,7 +100,7 @@ export class ServiciosComponent implements OnInit {
       direccion: servicio.direccion,
       fecha: servicio.fecha,
       horaInicio: servicio.horaInicio,
-      duracionHoras: this.calcularDuracionHoras(servicio.horaInicio, servicio.horaFin),
+      duracionHoras: servicio.duracionHoras ?? this.calcularDuracionHoras(servicio.horaInicio, servicio.horaFin),
       empleadoIds: servicio.empleados.map(e => e.id)
     };
     this.modalAbierto.set(true);
@@ -223,4 +223,13 @@ export class ServiciosComponent implements OnInit {
       error: () => this.error.set('No se pudo crear el servicio recurrente')
     });
   }
+
+  estadosDisponibles = ['PENDIENTE', 'CONFIRMADO', 'COMPLETADO', 'CANCELADO'];
+
+  cambiarEstado(servicio: Servicio, nuevoEstado: string): void {
+  this.servicioService.cambiarEstado(servicio.id!, nuevoEstado).subscribe({
+    next: () => this.cargarTodo(),
+    error: () => this.error.set('No se pudo cambiar el estado')
+  });
+}
 }

@@ -1,9 +1,9 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FacturacionService } from '../../core/services/facturacion.service';
+import { ServicioService } from '../../core/services/servicio.service';
 import { ClienteService } from '../../core/services/cliente.service';
-import { ServicioPendiente } from '../../core/models/factura.model';
+import { Servicio } from '../../core/models/servicio.model';
 import { Cliente } from '../../core/models/cliente.model';
 
 @Component({
@@ -16,21 +16,16 @@ import { Cliente } from '../../core/models/cliente.model';
 export class FacturacionComponent implements OnInit {
 
   clientes = signal<Cliente[]>([]);
-  serviciosPendientes = signal<ServicioPendiente[]>([]);
-  totalImporte = signal<number>(0);
+  servicios = signal<Servicio[]>([]);
+  cargando = signal(false);
+  error = signal<string | null>(null);
 
   clienteId = 0;
   desde = '';
   hasta = '';
-  fechaEmision = new Date().toISOString().split('T')[0];
-
-  buscando = signal(false);
-  generando = signal(false);
-  mensajeExito = signal<string | null>(null);
-  error = signal<string | null>(null);
 
   constructor(
-    private facturacionService: FacturacionService,
+    private servicioService: ServicioService,
     private clienteService: ClienteService
   ) {}
 
@@ -38,45 +33,43 @@ export class FacturacionComponent implements OnInit {
     this.clienteService.listar().subscribe(data => this.clientes.set(data));
   }
 
-  buscarPendientes(): void {
+  buscar(): void {
     if (!this.clienteId || !this.desde || !this.hasta) return;
 
-    this.buscando.set(true);
+    this.cargando.set(true);
     this.error.set(null);
-    this.facturacionService.obtenerPendientes(this.clienteId, this.desde, this.hasta).subscribe({
-      next: (resultado) => {
-        this.serviciosPendientes.set(resultado.servicios);
-        this.totalImporte.set(resultado.totalImporte);
-        this.buscando.set(false);
+    this.servicioService.listarPorClienteYRango(this.clienteId, this.desde, this.hasta).subscribe({
+      next: (data) => {
+        this.servicios.set(data);
+        this.cargando.set(false);
       },
       error: () => {
-        this.error.set('No se pudieron cargar los servicios pendientes');
-        this.buscando.set(false);
+        this.error.set('No se pudieron cargar los servicios');
+        this.cargando.set(false);
       }
     });
   }
 
-  generarFactura(): void {
-    this.generando.set(true);
-    this.error.set(null);
+  togglePago(servicio: Servicio): void {
+    const accion = servicio.pagado
+      ? this.servicioService.marcarPendiente(servicio.id!)
+      : this.servicioService.marcarPagado(servicio.id!);
 
-    this.facturacionService.generar({
-      clienteId: this.clienteId,
-      desde: this.desde,
-      hasta: this.hasta,
-      fechaEmision: this.fechaEmision
-    }).subscribe({
-      next: (resultado) => {
-        this.mensajeExito.set(`Factura ${resultado.numero} generada por ${resultado.importe.toFixed(2)} €`);
-        this.serviciosPendientes.set([]);
-        this.totalImporte.set(0);
-        this.generando.set(false);
-        setTimeout(() => this.mensajeExito.set(null), 6000);
-      },
-      error: (err) => {
-        this.error.set(err.error?.error ?? 'No se pudo generar la factura');
-        this.generando.set(false);
-      }
+    accion.subscribe({
+      next: () => this.buscar(),
+      error: () => this.error.set('No se pudo actualizar el estado de pago')
     });
+  }
+
+  totalImporte(): number {
+    return this.servicios().reduce((acc, s) => acc + (s.importe ?? 0), 0);
+  }
+
+  totalPagado(): number {
+    return this.servicios().filter(s => s.pagado).reduce((acc, s) => acc + (s.importe ?? 0), 0);
+  }
+
+  totalPendiente(): number {
+    return this.servicios().filter(s => !s.pagado).reduce((acc, s) => acc + (s.importe ?? 0), 0);
   }
 }

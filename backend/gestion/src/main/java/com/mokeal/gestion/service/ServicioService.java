@@ -5,6 +5,8 @@ import com.mokeal.gestion.dto.ServicioResponse;
 import com.mokeal.gestion.model.*;
 import com.mokeal.gestion.repository.*;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
@@ -94,10 +96,22 @@ public class ServicioService {
         servicio.setTarifa(tarifa);
         servicio.setDireccion(request.getDireccion());
         servicio.setFecha(request.getFecha());
-        long minutos = Math.round(request.getDuracionHoras() * 60);
+
+        double duracionTotal = request.getDuracionHoras();
+        int numEmpleados = Math.max(1, empleados.size());
+        long minutosReales = Math.round((duracionTotal / numEmpleados) * 60);
+
+        servicio.setDuracionHoras(duracionTotal);
         servicio.setHoraInicio(request.getHoraInicio());
-        servicio.setHoraFin(request.getHoraInicio().plusMinutes(minutos));
+        servicio.setHoraFin(request.getHoraInicio().plusMinutes(minutosReales));
         servicio.setEmpleados(new HashSet<>(empleados));
+
+        if (!empleados.isEmpty() && servicio.getEstado() != EstadoServicio.CANCELADO
+                && servicio.getEstado() != EstadoServicio.COMPLETADO) {
+            servicio.setEstado(EstadoServicio.CONFIRMADO);
+        } else if (empleados.isEmpty() && servicio.getEstado() == null) {
+            servicio.setEstado(EstadoServicio.PENDIENTE);
+        }
 
         // Geocodificar la dirección y establecer las coordenadas
         double[] coordenadas = geocodingService.geocodificar(request.getDireccion());
@@ -113,13 +127,14 @@ public class ServicioService {
         double duracionTotalHoras = (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay())
                 / 3600.0;
         int numEmpleados = servicio.getEmpleados().size();
-        double horasPorEmpleado = numEmpleados > 0 ? duracionTotalHoras / numEmpleados : 0;
+        double horasReales = (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay())
+                / 3600.0;
 
         Set<ServicioResponse.EmpleadoResumen> empleadosResumen = servicio.getEmpleados().stream()
                 .map(e -> ServicioResponse.EmpleadoResumen.builder()
                         .id(e.getId())
                         .nombre(e.getNombre())
-                        .horasAsignadas(horasPorEmpleado)
+                        .horasAsignadas(horasReales)
                         .build())
                 .collect(Collectors.toSet());
 
@@ -136,12 +151,66 @@ public class ServicioService {
                 .horaFin(servicio.getHoraFin())
                 .estado(servicio.getEstado())
                 .latitud(servicio.getLatitud())
+                .duracionHoras(servicio.getDuracionHoras())
                 .longitud(servicio.getLongitud())
                 .empleados(empleadosResumen)
+                .pagado(servicio.isPagado())
+                .fechaPago(servicio.getFechaPago())
+                .importe(calcularCoste(servicio))
                 .build();
     }
 
     public void guardarDirecto(Servicio servicio) {
         servicioRepository.save(servicio);
+    }
+
+    public List<ServicioResponse> buscarPorClienteYRango(Long clienteId, LocalDate desde, LocalDate hasta) {
+        return servicioRepository.findByClienteIdAndFechaBetween(clienteId, desde, hasta).stream()
+                .map(this::convertir)
+                .collect(Collectors.toList());
+    }
+
+    public ServicioResponse marcarPagado(Long id) {
+        Servicio s = buscarEntidad(id);
+        s.setPagado(true);
+        s.setFechaPago(LocalDate.now());
+        return convertir(servicioRepository.save(s));
+    }
+
+    public ServicioResponse marcarPendiente(Long id) {
+        Servicio s = buscarEntidad(id);
+        s.setPagado(false);
+        s.setFechaPago(null);
+        return convertir(servicioRepository.save(s));
+    }
+
+    private BigDecimal calcularCoste(Servicio servicio) {
+        Tarifa tarifa = servicio.getTarifa();
+        if (tarifa.getPrecioFijo() != null) {
+            return tarifa.getPrecioFijo();
+        }
+        double duracionHoras = (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay())
+                / 3600.0;
+        return tarifa.getPrecioHora().multiply(BigDecimal.valueOf(duracionHoras));
+    }
+
+    public ServicioResponse cambiarEstado(Long id, EstadoServicio nuevoEstado) {
+        Servicio s = buscarEntidad(id);
+        s.setEstado(nuevoEstado);
+        return convertir(servicioRepository.save(s));
+    }
+
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 5 0 * * *")
+    public void completarServiciosPasados() {
+        LocalDate ayer = LocalDate.now().minusDays(1);
+        List<Servicio> confirmadosPasados = servicioRepository.findByFechaBetween(LocalDate.of(2000, 1, 1), ayer)
+                .stream()
+                .filter(s -> s.getEstado() == EstadoServicio.CONFIRMADO)
+                .collect(Collectors.toList());
+
+        for (Servicio s : confirmadosPasados) {
+            s.setEstado(EstadoServicio.COMPLETADO);
+            servicioRepository.save(s);
+        }
     }
 }
