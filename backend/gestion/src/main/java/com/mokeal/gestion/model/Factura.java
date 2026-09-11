@@ -9,8 +9,10 @@ import java.util.Set;
 
 @Entity
 @Table(name = "factura")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Factura {
 
@@ -35,6 +37,10 @@ public class Factura {
 
     @Column(nullable = false)
     private LocalDate fechaEmision;
+
+    private BigDecimal subtotal;
+    private BigDecimal descuentoPorcentaje;
+    private BigDecimal ivaImporte;
 
     @OneToMany(mappedBy = "factura", fetch = FetchType.LAZY)
     @Builder.Default

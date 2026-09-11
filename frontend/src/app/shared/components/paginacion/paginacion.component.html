@@ -1,0 +1,17 @@
+@if (totalPaginas > 1) {
+  <div class="paginacion">
+    <button class="pag-btn" [disabled]="paginaActual === 1" (click)="ir(paginaActual - 1)">←</button>
+
+    @for (pagina of paginas; track pagina) {
+      <button
+        class="pag-btn"
+        [class.pag-btn-activo]="pagina === paginaActual"
+        (click)="ir(pagina)"
+      >
+        {{ pagina }}
+      </button>
+    }
+
+    <button class="pag-btn" [disabled]="paginaActual === totalPaginas" (click)="ir(paginaActual + 1)">→</button>
+  </div>
+}

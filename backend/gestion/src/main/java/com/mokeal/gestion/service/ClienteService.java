@@ -33,6 +33,7 @@ public class ClienteService {
         cliente.setTelefono(datosNuevos.getTelefono());
         cliente.setEmail(datosNuevos.getEmail());
         cliente.setDireccion(datosNuevos.getDireccion());
+        cliente.setCodigoPostal(datosNuevos.getCodigoPostal());
         cliente.setTipo(datosNuevos.getTipo());
         return clienteRepository.save(cliente);
     }

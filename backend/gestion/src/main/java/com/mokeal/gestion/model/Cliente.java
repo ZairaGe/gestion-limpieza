@@ -6,8 +6,10 @@ import lombok.*;
 
 @Entity
 @Table(name = "cliente")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Cliente {
 
@@ -28,6 +30,9 @@ public class Cliente {
 
     @Column(length = 255)
     private String direccion;
+
+    @Column(length = 10)
+    private String codigoPostal;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default

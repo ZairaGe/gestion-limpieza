@@ -6,5 +6,6 @@ export interface Cliente {
   telefono?: string;
   email?: string;
   direccion?: string;
+  codigoPostal?: string;
   tipo: TipoCliente;
 }

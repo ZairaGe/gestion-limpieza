@@ -37,7 +37,7 @@
             </tr>
         </thead>
         <tbody>
-            @for (servicio of servicios(); track servicio.id) {
+            @for (servicio of serviciosPaginados(); track servicio.id) {
             <tr>
                 <td>{{ servicio.clienteNombre }}</td>
                 <td>{{ servicio.fecha }}</td>
@@ -74,6 +74,8 @@
         </tbody>
     </table>
 </div>
+<app-paginacion [paginaActual]="paginaActual()" [totalPaginas]="totalPaginas()"
+    (cambioPagina)="cambiarPagina($event)"></app-paginacion>
 }
 
 @if (modalAbierto()) {

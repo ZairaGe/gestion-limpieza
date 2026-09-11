@@ -242,3 +242,29 @@ td {
 .linea-descuento {
   color: #dc2626;
 }
+
+.panel-generacion {
+  background: white;
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.filtro-linea {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.filtro-linea .form-group {
+  margin-bottom: 0;
+  min-width: 160px;
+}
+
+.table-card.compacta {
+  margin-top: 1rem;
+  box-shadow: none;
+  border: 1px solid #f0f0f0;
+}

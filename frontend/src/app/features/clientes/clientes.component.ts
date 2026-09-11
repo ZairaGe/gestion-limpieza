@@ -21,7 +21,7 @@ export class ClientesComponent implements OnInit {
   clienteEnEdicion: Cliente | null = null;
   formCliente: Cliente = this.clienteVacio();
 
-  constructor(private clienteService: ClienteService) {}
+  constructor(private clienteService: ClienteService) { }
 
   ngOnInit(): void {
     this.cargarClientes();
@@ -42,7 +42,7 @@ export class ClientesComponent implements OnInit {
   }
 
   clienteVacio(): Cliente {
-    return { nombre: '', telefono: '', email: '', direccion: '', tipo: 'PARTICULAR' as TipoCliente };
+    return { nombre: '', telefono: '', email: '', direccion: '', codigoPostal: '', tipo: 'PARTICULAR' as TipoCliente };
   }
 
   abrirModalCrear(): void {

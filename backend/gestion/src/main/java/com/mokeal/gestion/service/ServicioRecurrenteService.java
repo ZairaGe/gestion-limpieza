@@ -89,6 +89,9 @@ public class ServicioRecurrenteService {
                 servicio.setEmpleados(new HashSet<>(recurrente.getEmpleados()));
                 servicio.setLatitud(coords != null ? coords[0] : null);
                 servicio.setLongitud(coords != null ? coords[1] : null);
+                double duracion = (recurrente.getHoraFin().toSecondOfDay() - recurrente.getHoraInicio().toSecondOfDay())
+                        / 3600.0;
+                servicio.setDuracionHoras(duracion);
 
                 servicioService.guardarDirecto(servicio);
                 contador++;
