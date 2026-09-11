@@ -24,9 +24,9 @@
             @if (dia.servicios.length === 0) {
             <p class="dia-vacio">Sin servicios</p>
             } @else {
-            @for (servicio of dia.servicios; track servicio.id; let i = $index) {
+            @for (servicio of dia.servicios; track servicio.id) {
             <div class="servicio-card" (click)="abrirAsignacion(servicio)">
-                
+
                 <div class="servicio-hora">{{ servicio.horaInicio }} - {{ servicio.horaFin }} · {{
                     servicio.duracionHoras | number: '1.1-2' }}h contratadas</div>
                 <div class="servicio-cliente">{{ servicio.clienteNombre }}</div>
@@ -44,17 +44,12 @@
                 }
             </div>
 
-            @if (i < dia.servicios.length - 1) { @let distancia=calcularDistanciaKm(servicio, dia.servicios[i + 1]); @if
-                (distancia !==null) { <div class="distancia-indicador" [class.distancia-lejos]="distancia > 5">
-                ↓ {{ distancia | number: '1.1-1' }} km
+
+            }
+            }
         </div>
-        }
-        }
-        }
-        }
     </div>
-</div>
-}
+    }
 </div>
 <div class="mapa-section">
     <h2>Servicios del {{ etiquetaDiaSeleccionado() }}</h2>

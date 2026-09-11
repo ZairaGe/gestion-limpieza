@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ServicioService } from '../../core/services/servicio.service';
@@ -11,11 +11,12 @@ import { Tarifa } from '../../core/models/tarifa.model';
 import { Empleado } from '../../core/models/empleado.model';
 import { ServicioRecurrenteService } from '../../core/services/servicio-recurrente.service';
 import { ServicioRecurrenteRequest, DiaSemana } from '../../core/models/servicio-recurrente.model';
+import { PaginacionComponent } from '../../shared/components/paginacion/paginacion.component';
 
 @Component({
   selector: 'app-servicios',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginacionComponent],
   templateUrl: './servicios.component.html',
   styleUrl: './servicios.component.css'
 })
@@ -36,6 +37,9 @@ export class ServiciosComponent implements OnInit {
   modalRecurrenteAbierto = signal(false);
   mensajeExito = signal<string | null>(null);
 
+  paginaActual = signal(1);
+  itemsPorPagina = 10;
+
   constructor(
     private servicioService: ServicioService,
     private clienteService: ClienteService,
@@ -52,6 +56,7 @@ export class ServiciosComponent implements OnInit {
     this.cargando.set(true);
     this.servicioService.listar().subscribe({
       next: (data) => {
+        this.paginaActual.set(1);
         this.servicios.set(data);
         this.cargarDatosApoyo();
       },
@@ -227,9 +232,20 @@ export class ServiciosComponent implements OnInit {
   estadosDisponibles = ['PENDIENTE', 'CONFIRMADO', 'COMPLETADO', 'CANCELADO'];
 
   cambiarEstado(servicio: Servicio, nuevoEstado: string): void {
-  this.servicioService.cambiarEstado(servicio.id!, nuevoEstado).subscribe({
-    next: () => this.cargarTodo(),
-    error: () => this.error.set('No se pudo cambiar el estado')
+    this.servicioService.cambiarEstado(servicio.id!, nuevoEstado).subscribe({
+      next: () => this.cargarTodo(),
+      error: () => this.error.set('No se pudo cambiar el estado')
+    });
+  }
+
+  serviciosPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.itemsPorPagina;
+    return this.servicios().slice(inicio, inicio + this.itemsPorPagina);
   });
-}
+
+  totalPaginas = computed(() => Math.max(1, Math.ceil(this.servicios().length / this.itemsPorPagina)));
+
+  cambiarPagina(pagina: number): void {
+    this.paginaActual.set(pagina);
+  }
 }

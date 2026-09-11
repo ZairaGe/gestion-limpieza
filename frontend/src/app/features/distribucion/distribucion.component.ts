@@ -176,35 +176,12 @@ export class DistribucionComponent implements OnInit {
     });
   }
 
-  calcularDistanciaKm(s1: Servicio, s2: Servicio): number | null {
-    if (s1.latitud == null || s1.longitud == null || s2.latitud == null || s2.longitud == null) {
-      return null;
-    }
 
-    const R = 6371; // radio de la Tierra en km
-    const dLat = this.aRadianes(s2.latitud - s1.latitud);
-    const dLon = this.aRadianes(s2.longitud - s1.longitud);
-
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.aRadianes(s1.latitud)) * Math.cos(this.aRadianes(s2.latitud)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }
 
   private aRadianes(grados: number): number {
     return grados * (Math.PI / 180);
   }
 
-  distanciasDia(servicios: Servicio[]): (number | null)[] {
-    const distancias: (number | null)[] = [];
-    for (let i = 0; i < servicios.length - 1; i++) {
-      distancias.push(this.calcularDistanciaKm(servicios[i], servicios[i + 1]));
-    }
-    return distancias;
-  }
 
   servicioDiaSeleccionado = computed(() => {
     const dia = this.dias().find(d => d.fecha === this.diaSeleccionado());
