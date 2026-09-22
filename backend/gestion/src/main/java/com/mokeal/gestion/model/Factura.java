@@ -38,6 +38,9 @@ public class Factura {
     @Column(nullable = false)
     private LocalDate fechaEmision;
 
+    @Column(length = 100)
+    private String concepto;
+
     private BigDecimal subtotal;
     private BigDecimal descuentoPorcentaje;
     private BigDecimal ivaImporte;

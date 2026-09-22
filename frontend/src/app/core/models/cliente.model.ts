@@ -8,4 +8,5 @@ export interface Cliente {
   direccion?: string;
   codigoPostal?: string;
   tipo: TipoCliente;
+  nif?: string;
 }

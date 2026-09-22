@@ -18,4 +18,8 @@ public class GenerarFacturaRequest {
 
     @NotNull(message = "La fecha de emisión es obligatoria")
     private LocalDate fechaEmision;
+
+    private String concepto;
+
+    private Double descuentoPorcentaje;
 }

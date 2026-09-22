@@ -31,7 +31,7 @@ export class FacturasComponent implements OnInit {
   desdeGen = '';
   hastaGen = '';
   fechaEmision = new Date().toISOString().split('T')[0];
-  numeroManual = '';
+  concepto = 'Servicios de limpieza';
   serviciosPendientes = signal<ServicioPendiente[]>([]);
   seleccionados = new Set<number>();
   buscandoPendientes = signal(false);
@@ -128,7 +128,7 @@ export class FacturasComponent implements OnInit {
     this.facturacionService.generar({
       clienteId: this.clienteIdGen,
       servicioIds: Array.from(this.seleccionados),
-      numero: this.numeroManual || undefined,
+      concepto: this.concepto,
       descuentoPorcentaje: this.descuentoPorcentaje,
       fechaEmision: this.fechaEmision
     }).subscribe({

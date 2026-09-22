@@ -31,6 +31,9 @@ public class Cliente {
     @Column(length = 255)
     private String direccion;
 
+    @Column(length = 20)
+    private String nif;
+
     @Column(length = 10)
     private String codigoPostal;
 

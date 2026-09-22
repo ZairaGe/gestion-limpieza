@@ -54,15 +54,19 @@ public class FacturaService {
     }
 
     private FacturaResponse convertir(Factura factura) {
-        return FacturaResponse.builder()
-                .id(factura.getId())
-                .clienteId(factura.getCliente().getId())
-                .clienteNombre(factura.getCliente().getNombre())
-                .numero(factura.getNumero())
-                .importe(factura.getImporte())
-                .estado(factura.getEstado())
-                .fechaEmision(factura.getFechaEmision())
-                .cantidadServicios(factura.getServicios().size())
-                .build();
-    }
+    return FacturaResponse.builder()
+            .id(factura.getId())
+            .clienteId(factura.getCliente().getId())
+            .clienteNombre(factura.getCliente().getNombre())
+            .numero(factura.getNumero())
+            .concepto(factura.getConcepto())
+            .importe(factura.getImporte())
+            .estado(factura.getEstado())
+            .fechaEmision(factura.getFechaEmision())
+            .cantidadServicios(factura.getServicios().size())
+            .subtotal(factura.getSubtotal())
+            .descuentoPorcentaje(factura.getDescuentoPorcentaje())
+            .ivaImporte(factura.getIvaImporte())
+            .build();
+}
 }
