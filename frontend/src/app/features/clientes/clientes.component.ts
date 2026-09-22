@@ -42,7 +42,7 @@ export class ClientesComponent implements OnInit {
   }
 
   clienteVacio(): Cliente {
-    return { nombre: '', telefono: '', email: '', direccion: '', codigoPostal: '', tipo: 'PARTICULAR' as TipoCliente };
+    return { nombre: '', telefono: '', email: '', direccion: '', codigoPostal: '', tipo: 'PARTICULAR' as TipoCliente, nif: '' };
   }
 
   abrirModalCrear(): void {

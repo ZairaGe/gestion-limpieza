@@ -25,3 +25,12 @@ jwt:
 logging:
   level:
     org.springframework.security: DEBUG
+
+mokeal:
+  empresa:
+    nombre: Mokeal
+    nif: "60227433R"
+    direccion: "C/ Ricardo Ortiz 44, 2ºB 28017 Madrid"
+    telefono: "692120209"
+    email: "mokeal.limpieza@gmail.com"
+    cuentaBancaria: "ES57 2100 4991 6122 0025 7293"

@@ -1,5 +1,10 @@
 package com.mokeal.gestion.service;
 
+import com.itextpdf.io.image.ImageData;
+import com.itextpdf.io.image.ImageDataFactory;
+
+import org.springframework.core.io.ClassPathResource;
+
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.geom.PageSize;
@@ -14,286 +19,329 @@ import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.properties.VerticalAlignment;
 import com.mokeal.gestion.model.Factura;
 import com.mokeal.gestion.model.Servicio;
-import com.mokeal.gestion.model.Tarifa;
-import com.mokeal.gestion.repository.FacturaRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class FacturaPdfService {
 
-    private final FacturaRepository facturaRepository;
+        private final com.mokeal.gestion.repository.FacturaRepository facturaRepository;
 
-    @Value("${mokeal.empresa.nombre:Mokeal}")
-    private String empresaNombre;
-    @Value("${mokeal.empresa.nif:}")
-    private String empresaNif;
-    @Value("${mokeal.empresa.direccion:}")
-    private String empresaDireccion;
-    @Value("${mokeal.empresa.telefono:}")
-    private String empresaTelefono;
-    @Value("${mokeal.empresa.email:}")
-    private String empresaEmail;
+        @Value("${mokeal.empresa.nombre:Mokeal}")
+        private String empresaNombre;
+        @Value("${mokeal.empresa.nif:}")
+        private String empresaNif;
+        @Value("${mokeal.empresa.direccion:}")
+        private String empresaDireccion;
+        @Value("${mokeal.empresa.telefono:}")
+        private String empresaTelefono;
+        @Value("${mokeal.empresa.email:}")
+        private String empresaEmail;
+        @Value("${mokeal.empresa.cuentaBancaria:}")
+        private String cuentaBancaria;
 
-    private static final DeviceRgb TEAL = new DeviceRgb(20, 184, 166);
-    private static final DeviceRgb TEAL_OSCURO = new DeviceRgb(15, 61, 58);
-    private static final DeviceRgb TEAL_SUAVE = new DeviceRgb(240, 253, 250);
-    private static final DeviceRgb GRIS = new DeviceRgb(107, 114, 128);
-    private static final DeviceRgb GRIS_CLARO = new DeviceRgb(229, 231, 235);
-    private static final DeviceRgb GRIS_FILA = new DeviceRgb(249, 250, 251);
+        private static final DeviceRgb AZUL_PRIMARIO = new DeviceRgb(59, 111, 224);
+        private static final DeviceRgb AZUL_SUAVE = new DeviceRgb(234, 240, 253);
+        private static final DeviceRgb CREMA = new DeviceRgb(247, 243, 236);
+        private static final DeviceRgb GRIS = new DeviceRgb(107, 107, 100);
+        private static final DeviceRgb NEGRO = new DeviceRgb(26, 26, 26);
+        private static final DeviceRgb BORDE = new DeviceRgb(214, 208, 196);
 
-    public FacturaPdfService(FacturaRepository facturaRepository) {
-        this.facturaRepository = facturaRepository;
-    }
-
-    public byte[] generarPdf(Long facturaId) {
-        Factura factura = facturaRepository.findById(facturaId)
-                .orElseThrow(() -> new RuntimeException("Factura no encontrada con id: " + facturaId));
-
-        List<Servicio> servicios = factura.getServicios().stream()
-                .sorted((a, b) -> a.getFecha().compareTo(b.getFecha()))
-                .collect(Collectors.toList());
-
-        ByteArrayOutputStream salida = new ByteArrayOutputStream();
-        try (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(salida))) {
-            Document documento = new Document(pdfDoc, PageSize.A4);
-            documento.setMargins(0, 40, 40, 40);
-
-            documento.add(construirBannerCabecera(factura));
-
-            Div cuerpo = new Div().setMarginTop(30);
-            cuerpo.add(construirDatosClienteYEmpresa(factura));
-            cuerpo.add(construirTablaServicios(servicios));
-            cuerpo.add(construirTotales(factura));
-            cuerpo.add(construirPie());
-
-            documento.add(cuerpo);
-            documento.close();
+        public FacturaPdfService(com.mokeal.gestion.repository.FacturaRepository facturaRepository) {
+                this.facturaRepository = facturaRepository;
         }
 
-        return salida.toByteArray();
-    }
+        public byte[] generarPdf(Long facturaId) {
+                Factura factura = facturaRepository.findById(facturaId)
+                                .orElseThrow(() -> new RuntimeException("Factura no encontrada con id: " + facturaId));
 
-    private Div construirBannerCabecera(Factura factura) {
-        Div banner = new Div()
-                .setBackgroundColor(TEAL_OSCURO)
-                .setPaddingTop(30).setPaddingBottom(30).setPaddingLeft(40).setPaddingRight(40)
-                .setWidth(UnitValue.createPercentValue(100));
+                List<Servicio> servicios = factura.getServicios().stream()
+                                .sorted((a, b) -> a.getFecha().compareTo(b.getFecha()))
+                                .toList();
 
-        Table fila = new Table(UnitValue.createPercentArray(new float[]{12, 43, 45})).useAllAvailableWidth();
+                ByteArrayOutputStream salida = new ByteArrayOutputStream();
+                try (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(salida))) {
+                        Document documento = new Document(pdfDoc, PageSize.A4);
+                        documento.setMargins(40, 40, 40, 40);
 
-        Cell celdaLogo = new Cell().setBorder(Border.NO_BORDER)
-                .setVerticalAlignment(VerticalAlignment.MIDDLE);
-        Table logoBox = new Table(1).setWidth(UnitValue.createPointValue(38));
-        logoBox.addCell(new Cell()
-                .add(new Paragraph("✦").setFontColor(TEAL_OSCURO).setBold().setFontSize(18)
-                        .setTextAlignment(TextAlignment.CENTER))
-                .setBackgroundColor(ColorConstants.WHITE)
-                .setBorder(Border.NO_BORDER)
-                .setHeight(38)
-                .setVerticalAlignment(VerticalAlignment.MIDDLE));
-        celdaLogo.add(logoBox);
+                        documento.add(construirCabecera(factura));
+                        documento.add(construirCajaFacturaFecha(factura));
+                        documento.add(construirCajaCliente(factura));
+                        documento.add(construirTablaConcepto(factura, servicios));
+                        documento.add(construirTotales(factura));
+                        documento.add(construirPie());
 
-        Cell celdaNombre = new Cell().setBorder(Border.NO_BORDER)
-                .setVerticalAlignment(VerticalAlignment.MIDDLE)
-                .add(new Paragraph(empresaNombre).setFontColor(ColorConstants.WHITE).setBold().setFontSize(20));
+                        documento.close();
+                }
 
-        Cell celdaFactura = new Cell().setBorder(Border.NO_BORDER)
-                .setVerticalAlignment(VerticalAlignment.MIDDLE)
-                .add(new Paragraph("FACTURA").setFontColor(ColorConstants.WHITE).setBold().setFontSize(20)
-                        .setTextAlignment(TextAlignment.RIGHT))
-                .add(new Paragraph(factura.getNumero()).setFontColor(TEAL).setFontSize(11)
-                        .setTextAlignment(TextAlignment.RIGHT));
-
-        fila.addCell(celdaLogo);
-        fila.addCell(celdaNombre);
-        fila.addCell(celdaFactura);
-
-        banner.add(fila);
-        return banner;
-    }
-
-    private Table construirDatosClienteYEmpresa(Factura factura) {
-        Table contenedor = new Table(UnitValue.createPercentArray(new float[]{55, 45})).useAllAvailableWidth();
-
-        Div boxCliente = new Div()
-                .setBackgroundColor(TEAL_SUAVE)
-                .setPadding(14);
-        boxCliente.add(new Paragraph("FACTURAR A").setBold().setFontSize(8).setFontColor(TEAL_OSCURO).setMarginBottom(4));
-        boxCliente.add(new Paragraph(factura.getCliente().getNombre()).setFontSize(12).setBold());
-        if (factura.getCliente().getDireccion() != null && !factura.getCliente().getDireccion().isBlank()) {
-            boxCliente.add(new Paragraph(factura.getCliente().getDireccion()).setFontSize(9).setFontColor(GRIS));
-        }
-        if (factura.getCliente().getTelefono() != null && !factura.getCliente().getTelefono().isBlank()) {
-            boxCliente.add(new Paragraph(factura.getCliente().getTelefono()).setFontSize(9).setFontColor(GRIS));
-        }
-        if (factura.getCliente().getEmail() != null && !factura.getCliente().getEmail().isBlank()) {
-            boxCliente.add(new Paragraph(factura.getCliente().getEmail()).setFontSize(9).setFontColor(GRIS));
+                return salida.toByteArray();
         }
 
-        Div boxDatos = new Div().setPadding(14);
-        filaDato(boxDatos, "Fecha de emisión", factura.getFechaEmision().toString());
-        if (!empresaNif.isBlank()) filaDato(boxDatos, "NIF", empresaNif);
-        if (!empresaTelefono.isBlank()) filaDato(boxDatos, "Teléfono", empresaTelefono);
-        if (!empresaEmail.isBlank()) filaDato(boxDatos, "Email", empresaEmail);
-        if (!empresaDireccion.isBlank()) filaDato(boxDatos, "Dirección", empresaDireccion);
+        private Table construirCabecera(Factura factura) {
+                Table fila = new Table(
+                                UnitValue.createPercentArray(new float[] { 30, 70 })).useAllAvailableWidth();
 
-        contenedor.addCell(new Cell().add(boxCliente).setBorder(Border.NO_BORDER).setPadding(0).setPaddingRight(8));
-        contenedor.addCell(new Cell().add(boxDatos).setBorder(Border.NO_BORDER).setPadding(0).setPaddingLeft(8));
-        return contenedor;
-    }
+                Table logoBox = new Table(1)
+                                .setWidth(UnitValue.createPointValue(100));
 
-    private void filaDato(Div contenedor, String etiqueta, String valor) {
-        Table fila = new Table(UnitValue.createPercentArray(new float[]{45, 55})).useAllAvailableWidth();
-        fila.addCell(new Cell().setBorder(Border.NO_BORDER).setPaddingBottom(3)
-                .add(new Paragraph(etiqueta).setFontSize(9).setFontColor(GRIS)));
-        fila.addCell(new Cell().setBorder(Border.NO_BORDER).setPaddingBottom(3)
-                .add(new Paragraph(valor).setFontSize(9).setTextAlignment(TextAlignment.RIGHT)));
-        contenedor.add(fila);
-    }
+                try {
+                        ClassPathResource recurso = new ClassPathResource("../static/logo.png");
 
-    private Table construirTablaServicios(List<Servicio> servicios) {
-        Table tabla = new Table(UnitValue.createPercentArray(new float[]{18, 15, 47, 20}))
-                .useAllAvailableWidth().setMarginTop(25);
+                        ImageData imageData = ImageDataFactory.create(
+                                        recurso.getInputStream().readAllBytes());
 
-        tabla.addHeaderCell(celdaCabecera("Fecha"));
-        tabla.addHeaderCell(celdaCabecera("Duración"));
-        tabla.addHeaderCell(celdaCabecera("Dirección"));
-        tabla.addHeaderCell(celdaCabeceraDerecha("Importe"));
+                        Image logo = new Image(imageData);
+                        logo.setWidth(90);
+                        logo.setAutoScaleHeight(true);
 
-        boolean alterna = false;
-        for (Servicio s : servicios) {
-            BigDecimal coste = calcularCoste(s);
-            double duracion = obtenerDuracion(s);
-            DeviceRgb colorFila = alterna ? GRIS_FILA : new DeviceRgb(255, 255, 255);
+                        logoBox.addCell(
+                                        new Cell()
+                                                        .add(logo)
+                                                        .setBorder(Border.NO_BORDER)
+                                                        .setTextAlignment(TextAlignment.LEFT)
+                                                        .setVerticalAlignment(VerticalAlignment.MIDDLE));
 
-            tabla.addCell(celdaFila(s.getFecha().toString(), colorFila, TextAlignment.LEFT));
-            tabla.addCell(celdaFila(String.format("%.2fh", duracion), colorFila, TextAlignment.LEFT));
-            tabla.addCell(celdaFila(s.getDireccion(), colorFila, TextAlignment.LEFT));
-            tabla.addCell(celdaFila(String.format("%.2f €", coste), colorFila, TextAlignment.RIGHT));
-            alterna = !alterna;
+                } catch (Exception e) {
+                        logoBox.addCell(
+                                        new Cell()
+                                                        .add(new Paragraph("Mokeal")
+                                                                        .setBold()
+                                                                        .setFontSize(14))
+                                                        .setBorder(Border.NO_BORDER));
+                }
+
+                Cell celdaLogo = new Cell()
+                                .setBorder(Border.NO_BORDER)
+                                .add(logoBox);
+
+                Cell celdaEmpresa = new Cell()
+                                .setBorder(Border.NO_BORDER)
+                                .setTextAlignment(TextAlignment.RIGHT);
+
+                celdaEmpresa.add(
+                                new Paragraph(empresaNombre)
+                                                .setBold()
+                                                .setFontSize(12)
+                                                .setFontColor(NEGRO));
+
+                if (!empresaNif.isBlank())
+                        celdaEmpresa.add(new Paragraph(empresaNif)
+                                        .setFontSize(9)
+                                        .setFontColor(GRIS));
+
+                if (!empresaDireccion.isBlank())
+                        celdaEmpresa.add(new Paragraph(empresaDireccion)
+                                        .setFontSize(9)
+                                        .setFontColor(GRIS));
+
+                if (!empresaTelefono.isBlank())
+                        celdaEmpresa.add(new Paragraph(empresaTelefono)
+                                        .setFontSize(9)
+                                        .setFontColor(GRIS));
+
+                if (!empresaEmail.isBlank())
+                        celdaEmpresa.add(new Paragraph(empresaEmail)
+                                        .setFontSize(9)
+                                        .setFontColor(GRIS));
+
+                fila.addCell(celdaLogo);
+                fila.addCell(celdaEmpresa);
+
+                return fila;
         }
 
-        return tabla;
-    }
+        private Table construirCajaFacturaFecha(Factura factura) {
+                Table contenedor = new Table(UnitValue.createPercentArray(new float[] { 60, 40 }))
+                                .useAllAvailableWidth().setMarginTop(15);
+                contenedor.addCell(new Cell().setBorder(Border.NO_BORDER));
 
-    private Table construirTotales(Factura factura) {
-        Table contenedor = new Table(UnitValue.createPercentArray(new float[]{55, 45})).useAllAvailableWidth().setMarginTop(15);
+                Table caja = new Table(UnitValue.createPercentArray(new float[] { 45, 55 }))
+                                .useAllAvailableWidth()
+                                .setBorder(new SolidBorder(BORDE, 0.7f));
 
-        BigDecimal subtotal = factura.getSubtotal() != null ? factura.getSubtotal() : factura.getImporte();
-        BigDecimal descuentoPct = factura.getDescuentoPorcentaje() != null ? factura.getDescuentoPorcentaje() : BigDecimal.ZERO;
-        BigDecimal iva = factura.getIvaImporte();
+                caja.addCell(celdaEtiquetaCaja("Factura"));
+                caja.addCell(celdaValorCaja(factura.getNumero()));
+                caja.addCell(celdaEtiquetaCaja("Fecha"));
+                caja.addCell(celdaValorCaja(factura.getFechaEmision().toString()));
 
-        Div cajaTotales = new Div()
-                .setBackgroundColor(TEAL_SUAVE)
-                .setPadding(14);
-
-        filaTotales(cajaTotales, "Subtotal", String.format("%.2f €", subtotal), false);
-
-        if (descuentoPct.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal importeDescuento = subtotal.multiply(descuentoPct).divide(BigDecimal.valueOf(100));
-            filaTotales(cajaTotales, "Descuento (" + descuentoPct.stripTrailingZeros().toPlainString() + "%)",
-                    "-" + String.format("%.2f €", importeDescuento), false);
+                contenedor.addCell(new Cell().add(caja).setBorder(Border.NO_BORDER).setPadding(0));
+                return contenedor;
         }
 
-        if (iva != null) {
-            filaTotales(cajaTotales, "IVA (21%)", String.format("%.2f €", iva), false);
+        private Cell celdaEtiquetaCaja(String texto) {
+                return new Cell().add(new Paragraph(texto).setBold().setFontSize(9))
+                                .setBackgroundColor(AZUL_SUAVE)
+                                .setPadding(5)
+                                .setBorder(new SolidBorder(BORDE, 0.5f));
         }
 
-        cajaTotales.add(new com.itextpdf.layout.element.LineSeparator(
-                new com.itextpdf.kernel.pdf.canvas.draw.SolidLine(1))
-                .setStrokeColor(TEAL).setMarginTop(6).setMarginBottom(6));
-
-        filaTotales(cajaTotales, "TOTAL", String.format("%.2f €", factura.getImporte()), true);
-
-        contenedor.addCell(new Cell().setBorder(Border.NO_BORDER));
-        contenedor.addCell(new Cell().add(cajaTotales).setBorder(Border.NO_BORDER).setPadding(0));
-        return contenedor;
-    }
-
-    private void filaTotales(Div contenedor, String etiqueta, String valor, boolean destacado) {
-        Table fila = new Table(UnitValue.createPercentArray(new float[]{50, 50})).useAllAvailableWidth();
-
-        Paragraph pEtiqueta = new Paragraph(etiqueta)
-                .setFontSize(destacado ? 13 : 10)
-                .setFontColor(destacado ? TEAL_OSCURO : GRIS);
-        Paragraph pValor = new Paragraph(valor)
-                .setFontSize(destacado ? 13 : 10)
-                .setFontColor(destacado ? TEAL_OSCURO : ColorConstants.BLACK)
-                .setTextAlignment(TextAlignment.RIGHT);
-        if (destacado) {
-            pEtiqueta.setBold();
-            pValor.setBold();
+        private Cell celdaValorCaja(String texto) {
+                return new Cell().add(new Paragraph(texto).setFontSize(9))
+                                .setPadding(5)
+                                .setBorder(new SolidBorder(BORDE, 0.5f));
         }
 
-        fila.addCell(new Cell().setBorder(Border.NO_BORDER).add(pEtiqueta));
-        fila.addCell(new Cell().setBorder(Border.NO_BORDER).add(pValor));
-        contenedor.add(fila);
-    }
+        private Div construirCajaCliente(Factura factura) {
+                Div caja = new Div()
+                                .setBorder(new SolidBorder(BORDE, 0.7f))
+                                .setPadding(12)
+                                .setMarginTop(15);
 
-    private Div construirPie() {
-        Div pie = new Div().setMarginTop(35).setPaddingTop(12)
-                .setBorderTop(new SolidBorder(GRIS_CLARO, 1));
+                caja.add(new Paragraph("CLIENTE").setBold().setFontSize(9).setMarginBottom(4));
 
-        Paragraph linea1 = new Paragraph(empresaNombre + (empresaTelefono.isBlank() ? "" : " · " + empresaTelefono))
-                .setFontSize(9).setFontColor(GRIS).setTextAlignment(TextAlignment.CENTER);
-        pie.add(linea1);
+                Table datos = new Table(UnitValue.createPercentArray(new float[] { 20, 80 })).useAllAvailableWidth();
+                datos.addCell(etiquetaSinBorde("Nombre:"));
+                datos.addCell(valorSinBorde(factura.getCliente().getNombre(), true));
 
-        if (!empresaEmail.isBlank() || !empresaDireccion.isBlank()) {
-            String segundaLinea = (empresaEmail.isBlank() ? "" : empresaEmail)
-                    + (empresaDireccion.isBlank() ? "" : (empresaEmail.isBlank() ? "" : " · ") + empresaDireccion);
-            pie.add(new Paragraph(segundaLinea).setFontSize(9).setFontColor(GRIS).setTextAlignment(TextAlignment.CENTER));
+                if (factura.getCliente().getNif() != null && !factura.getCliente().getNif().isBlank()) {
+                        datos.addCell(etiquetaSinBorde("CIF/NIF:"));
+                        datos.addCell(valorSinBorde(factura.getCliente().getNif(), true));
+                }
+
+                if (factura.getCliente().getDireccion() != null && !factura.getCliente().getDireccion().isBlank()) {
+                        String direccionCompleta = factura.getCliente().getDireccion();
+                        if (factura.getCliente().getCodigoPostal() != null
+                                        && !factura.getCliente().getCodigoPostal().isBlank()) {
+                                direccionCompleta += ", " + factura.getCliente().getCodigoPostal();
+                        }
+                        datos.addCell(etiquetaSinBorde("Dirección:"));
+                        datos.addCell(valorSinBorde(direccionCompleta, false));
+                }
+
+                caja.add(datos);
+                return caja;
         }
 
-        pie.add(new Paragraph("Gracias por confiar en nosotros")
-                .setFontSize(9).setFontColor(TEAL).setItalic().setMarginTop(8).setTextAlignment(TextAlignment.CENTER));
-
-        return pie;
-    }
-
-    private Cell celdaCabecera(String texto) {
-        return new Cell().add(new Paragraph(texto).setBold().setFontSize(9))
-                .setBackgroundColor(TEAL_OSCURO)
-                .setFontColor(ColorConstants.WHITE)
-                .setTextAlignment(TextAlignment.LEFT)
-                .setPadding(8)
-                .setBorder(Border.NO_BORDER);
-    }
-
-    private Cell celdaCabeceraDerecha(String texto) {
-        return new Cell().add(new Paragraph(texto).setBold().setFontSize(9))
-                .setBackgroundColor(TEAL_OSCURO)
-                .setFontColor(ColorConstants.WHITE)
-                .setTextAlignment(TextAlignment.RIGHT)
-                .setPadding(8)
-                .setBorder(Border.NO_BORDER);
-    }
-
-    private Cell celdaFila(String texto, DeviceRgb color, TextAlignment alineacion) {
-        return new Cell().add(new Paragraph(texto).setFontSize(9.5f))
-                .setBackgroundColor(color)
-                .setTextAlignment(alineacion)
-                .setPadding(8)
-                .setBorder(Border.NO_BORDER)
-                .setBorderBottom(new SolidBorder(GRIS_CLARO, 0.5f));
-    }
-
-    private double obtenerDuracion(Servicio servicio) {
-        return servicio.getDuracionHoras() != null
-                ? servicio.getDuracionHoras()
-                : (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;
-    }
-
-    private BigDecimal calcularCoste(Servicio servicio) {
-        Tarifa tarifa = servicio.getTarifa();
-        if (tarifa.getPrecioFijo() != null) {
-            return tarifa.getPrecioFijo();
+        private Cell etiquetaSinBorde(String texto) {
+                return new Cell().add(new Paragraph(texto).setFontSize(9).setFontColor(GRIS))
+                                .setBorder(Border.NO_BORDER).setPaddingBottom(3);
         }
-        return tarifa.getPrecioHora().multiply(BigDecimal.valueOf(obtenerDuracion(servicio)));
-    }
+
+        private Cell valorSinBorde(String texto, boolean negrita) {
+                Paragraph p = new Paragraph(texto).setFontSize(9);
+                if (negrita)
+                        p.setBold();
+                return new Cell().add(p).setBorder(Border.NO_BORDER).setPaddingBottom(3);
+        }
+
+        private Table construirTablaConcepto(Factura factura, List<Servicio> servicios) {
+                double horasTotales = servicios.stream()
+                                .mapToDouble(this::obtenerDuracion)
+                                .sum();
+
+                BigDecimal subtotal = factura.getSubtotal() != null ? factura.getSubtotal() : factura.getImporte();
+                String horasTexto = horasTotales > 0 ? String.format("%.2f", horasTotales) : "-";
+                String precioHoraTexto = horasTotales > 0
+                                ? String.format("%.2f €", subtotal.doubleValue() / horasTotales)
+                                : "-";
+
+                Table tabla = new Table(UnitValue.createPercentArray(new float[] { 45, 18, 18, 19 }))
+                                .useAllAvailableWidth().setMarginTop(20);
+
+                tabla.addHeaderCell(celdaCabecera("CONCEPTO", TextAlignment.LEFT));
+                tabla.addHeaderCell(celdaCabecera("HORAS", TextAlignment.CENTER));
+                tabla.addHeaderCell(celdaCabecera("€/HORA", TextAlignment.CENTER));
+                tabla.addHeaderCell(celdaCabecera("SUBTOTAL", TextAlignment.RIGHT));
+
+                String concepto = factura.getConcepto() != null && !factura.getConcepto().isBlank()
+                                ? factura.getConcepto()
+                                : "Servicios de limpieza";
+
+                tabla.addCell(celdaFila(concepto, TextAlignment.LEFT));
+                tabla.addCell(celdaFila(horasTexto, TextAlignment.CENTER));
+                tabla.addCell(celdaFila(precioHoraTexto, TextAlignment.CENTER));
+                tabla.addCell(celdaFila(String.format("%.2f €", subtotal), TextAlignment.RIGHT));
+
+                return tabla;
+        }
+
+        private Cell celdaCabecera(String texto, TextAlignment alineacion) {
+                return new Cell().add(new Paragraph(texto).setBold().setFontSize(9))
+                                .setBackgroundColor(AZUL_SUAVE)
+                                .setTextAlignment(alineacion)
+                                .setPadding(7)
+                                .setBorder(new SolidBorder(BORDE, 0.5f));
+        }
+
+        private Cell celdaFila(String texto, TextAlignment alineacion) {
+                return new Cell().add(new Paragraph(texto).setFontSize(9.5f))
+                                .setTextAlignment(alineacion)
+                                .setPadding(7)
+                                .setBorder(new SolidBorder(BORDE, 0.5f));
+        }
+
+        private Table construirTotales(Factura factura) {
+                BigDecimal subtotal = factura.getSubtotal() != null ? factura.getSubtotal() : factura.getImporte();
+                BigDecimal descuentoPct = factura.getDescuentoPorcentaje() != null ? factura.getDescuentoPorcentaje()
+                                : BigDecimal.ZERO;
+                BigDecimal importeDescuento = subtotal.multiply(descuentoPct).divide(BigDecimal.valueOf(100));
+                BigDecimal baseFinal = subtotal.subtract(importeDescuento);
+                BigDecimal iva = factura.getIvaImporte() != null ? factura.getIvaImporte() : BigDecimal.ZERO;
+
+                Table contenedor = new Table(UnitValue.createPercentArray(new float[] { 55, 45 }))
+                                .useAllAvailableWidth().setMarginTop(15);
+                contenedor.addCell(new Cell().setBorder(Border.NO_BORDER));
+
+                Table caja = new Table(UnitValue.createPercentArray(new float[] { 55, 45 }))
+                                .useAllAvailableWidth()
+                                .setBorder(new SolidBorder(BORDE, 0.7f));
+
+                filaTotal(caja, "BASE IMPONIBLE", String.format("%.2f €", subtotal), false);
+                filaTotal(caja, "DESCUENTO %", descuentoPct.stripTrailingZeros().toPlainString() + "%", false);
+                filaTotal(caja, "DESCUENTO €", String.format("%.2f €", importeDescuento), false);
+                filaTotal(caja, "BASE FINAL", String.format("%.2f €", baseFinal), false);
+                filaTotal(caja, "IVA 21%", String.format("%.2f €", iva), false);
+                filaTotal(caja, "TOTAL", String.format("%.2f €", factura.getImporte()), true);
+
+                contenedor.addCell(new Cell().add(caja).setBorder(Border.NO_BORDER).setPadding(0));
+                return contenedor;
+        }
+
+        private void filaTotal(Table tabla, String etiqueta, String valor, boolean destacado) {
+                Paragraph pEtiqueta = new Paragraph(etiqueta).setFontSize(destacado ? 11 : 9);
+                Paragraph pValor = new Paragraph(valor).setFontSize(destacado ? 11 : 9)
+                                .setTextAlignment(TextAlignment.RIGHT);
+                if (destacado) {
+                        pEtiqueta.setBold();
+                        pValor.setBold();
+                }
+
+                Cell celdaEtiqueta = new Cell().add(pEtiqueta).setPadding(6).setBorder(new SolidBorder(BORDE, 0.4f));
+                Cell celdaValor = new Cell().add(pValor).setPadding(6).setBorder(new SolidBorder(BORDE, 0.4f));
+
+                if (destacado) {
+                        celdaEtiqueta.setBackgroundColor(AZUL_PRIMARIO);
+                        celdaValor.setBackgroundColor(AZUL_PRIMARIO);
+                        celdaEtiqueta.setFontColor(ColorConstants.WHITE);
+                        celdaValor.setFontColor(ColorConstants.WHITE);
+                }
+
+                tabla.addCell(celdaEtiqueta);
+                tabla.addCell(celdaValor);
+        }
+
+        private Div construirPie() {
+                Div pie = new Div().setMarginTop(35);
+                pie.add(new Paragraph("GRACIAS POR SU CONFIANZA").setBold().setFontSize(10)
+                                .setFontColor(AZUL_PRIMARIO));
+
+                if (!cuentaBancaria.isBlank()) {
+                        pie.add(new Paragraph("Ingresar al número de cuenta:").setFontSize(9).setFontColor(GRIS)
+                                        .setMarginTop(6));
+                        pie.add(new Paragraph(cuentaBancaria).setFontSize(10).setBold());
+                }
+
+                return pie;
+        }
+
+        private double obtenerDuracion(Servicio servicio) {
+                return servicio.getDuracionHoras() != null
+                                ? servicio.getDuracionHoras()
+                                : (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay())
+                                                / 3600.0;
+        }
 }

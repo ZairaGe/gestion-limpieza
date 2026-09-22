@@ -5,6 +5,7 @@ export interface Factura {
   clienteId: number;
   clienteNombre: string;
   numero: string;
+  concepto?: string;
   subtotal?: number;
   descuentoPorcentaje?: number;
   ivaImporte?: number;
@@ -31,7 +32,7 @@ export interface FacturacionPendienteResponse {
 export interface GenerarFacturaRequest {
   clienteId: number;
   servicioIds: number[];
-  numero?: string;
+  concepto?: string;
   descuentoPorcentaje?: number;
   fechaEmision: string;
 }

@@ -16,4 +16,8 @@ public class FacturaResponse {
     private EstadoFactura estado;
     private LocalDate fechaEmision;
     private int cantidadServicios;
+    private String concepto;
+    private BigDecimal subtotal;
+    private BigDecimal descuentoPorcentaje;
+    private BigDecimal ivaImporte;
 }

@@ -71,9 +71,24 @@ public class FacturacionService {
             }
         }
 
-        BigDecimal total = servicios.stream()
+        BigDecimal subtotal = servicios.stream()
                 .map(this::calcularCoste)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+
+        BigDecimal descuentoPorcentaje = request.getDescuentoPorcentaje() != null
+                ? BigDecimal.valueOf(request.getDescuentoPorcentaje())
+                : BigDecimal.ZERO;
+
+        BigDecimal importeDescuento = subtotal.multiply(descuentoPorcentaje)
+                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+
+        BigDecimal baseImponible = subtotal.subtract(importeDescuento);
+
+        BigDecimal iva = baseImponible.multiply(BigDecimal.valueOf(0.21))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+
+        BigDecimal total = baseImponible.add(iva).setScale(2, java.math.RoundingMode.HALF_UP);
 
         String numeroFinal = (request.getNumero() != null && !request.getNumero().isBlank())
                 ? request.getNumero()
@@ -82,8 +97,13 @@ public class FacturacionService {
         Factura factura = Factura.builder()
                 .cliente(cliente)
                 .numero(numeroFinal)
+                .subtotal(subtotal)
+                .descuentoPorcentaje(descuentoPorcentaje)
+                .ivaImporte(iva)
                 .importe(total)
                 .fechaEmision(request.getFechaEmision())
+                .concepto(request.getConcepto() != null && !request.getConcepto().isBlank() ? request.getConcepto()
+                        : "Servicios de limpieza")
                 .build();
 
         facturaRepository.save(factura);
