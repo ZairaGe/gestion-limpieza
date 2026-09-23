@@ -20,6 +20,7 @@ export class LayoutComponent {
     { label: 'Tarifas', ruta: '/tarifas', icono: '🏷' },
     { label: 'Facturas', ruta: '/facturas', icono: '🧾' },
     { label: 'Facturación', ruta: '/facturacion', icono: '💰' },
+    { label: 'Presupuestos', ruta: '/presupuestos', icono: '📋' },
   ];
 
   constructor(public authService: AuthService) {}

@@ -33,7 +33,10 @@ public class ServicioService {
     }
 
     public List<ServicioResponse> listarTodos() {
-        return servicioRepository.findAll().stream()
+        return servicioRepository
+                .findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                        "id"))
+                .stream()
                 .map(this::convertir)
                 .collect(Collectors.toList());
     }
@@ -212,5 +215,12 @@ public class ServicioService {
             s.setEstado(EstadoServicio.COMPLETADO);
             servicioRepository.save(s);
         }
+    }
+
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 10 0 * * *")
+    public void eliminarServiciosAntiguos() {
+        LocalDate limite = LocalDate.now().minusMonths(2);
+        List<Servicio> antiguos = servicioRepository.findByFechaBefore(limite);
+        servicioRepository.deleteAll(antiguos);
     }
 }
