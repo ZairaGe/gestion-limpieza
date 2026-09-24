@@ -81,6 +81,18 @@ public class FacturaPdfService {
                 return salida.toByteArray();
         }
 
+        private Image cargarLogo() {
+                try (java.io.InputStream is = getClass().getResourceAsStream("/static/logo-mokeal.png")) {
+                        if (is == null)
+                                return null;
+                        byte[] bytes = is.readAllBytes();
+                        return new Image(ImageDataFactory.create(bytes)).setHeight(50);
+                } catch (Exception e) {
+                        System.err.println("No se pudo cargar el logo: " + e.getMessage());
+                        return null;
+                }
+        }
+
         private Table construirCabecera(Factura factura) {
                 Table fila = new Table(
                                 UnitValue.createPercentArray(new float[] { 30, 70 })).useAllAvailableWidth();
@@ -89,7 +101,7 @@ public class FacturaPdfService {
                                 .setWidth(UnitValue.createPointValue(100));
 
                 try {
-                        ClassPathResource recurso = new ClassPathResource("../static/logo.png");
+                        ClassPathResource recurso = new ClassPathResource("logo.png");
 
                         ImageData imageData = ImageDataFactory.create(
                                         recurso.getInputStream().readAllBytes());
@@ -106,6 +118,8 @@ public class FacturaPdfService {
                                                         .setVerticalAlignment(VerticalAlignment.MIDDLE));
 
                 } catch (Exception e) {
+                        System.err.println("ERROR cargando logo: " + e.getMessage());
+                        e.printStackTrace();
                         logoBox.addCell(
                                         new Cell()
                                                         .add(new Paragraph("Mokeal")
