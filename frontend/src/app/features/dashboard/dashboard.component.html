@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <h1>Dashboard</h1>
-    <p>Vista general de tu actividad.</p>
+    <p>Resumen de la semana · {{ rangoSemana }}</p>
   </div>
 </div>
 
@@ -101,19 +101,6 @@
         </ul>
       </div>
 
-      <div class="resumen-semanal">
-        <h2>📈 Resumen semanal</h2>
-        <div class="resumen-datos">
-          <div>
-            <span>Total servicios</span>
-            <strong>{{ resumen()!.resumenSemanal.totalServicios }}</strong>
-          </div>
-          <div>
-            <span>Pendientes</span>
-            <strong>{{ resumen()!.resumenSemanal.pendientes }}</strong>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 }
