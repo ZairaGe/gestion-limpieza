@@ -25,6 +25,7 @@ public class ServicioResponse {
     private Double latitud;
     private Double longitud;
     private Boolean pagado;
+    private Boolean recurrente;
     private LocalDate fechaPago;
     private BigDecimal importe;
     private Double duracionHoras;

@@ -65,6 +65,9 @@ public class Servicio {
     @Column(nullable = false)
     private boolean pagado;
 
+    @Column(nullable = false)
+    private boolean recurrente;
+
     private LocalDate fechaPago;
 
     @ManyToMany

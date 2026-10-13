@@ -158,6 +158,7 @@ public class ServicioService {
                 .longitud(servicio.getLongitud())
                 .empleados(empleadosResumen)
                 .pagado(servicio.isPagado())
+                .recurrente(servicio.isRecurrente())
                 .fechaPago(servicio.getFechaPago())
                 .importe(calcularCoste(servicio))
                 .build();
