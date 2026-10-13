@@ -2,28 +2,23 @@
   <aside class="sidebar">
     <div class="logo">
       <img src="../favicon.jpg" alt="logo">
-      <!--<h1>Mokeal</h1>-->
+      <span class="logo-texto">{{ nombreApp }}</span>
     </div>
 
-    <p class="section-label">Gestión</p>
-
     <nav>
-  @for (item of menuItems; track item.ruta) {
-    <a
-      [routerLink]="item.ruta"
-      routerLinkActive="active"
-      class="menu-item"
-    >
-      <span class="icon">{{ item.icono }}</span>
-      {{ item.label }}
-    </a>
-  }
-</nav>
+      @for (item of menuItems; track item.ruta) {
+        <a [routerLink]="item.ruta" routerLinkActive="active" class="menu-item">
+          <svg [lucideIcon]="item.icono" [size]="18" [strokeWidth]="1.75"></svg>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
 
     <div class="sidebar-footer">
+      <span class="email"></span>
       <button class="logout-btn" (click)="cerrarSesion()">
-        <span class="icon">⎋</span>
-        Salir
+        <svg [lucideIcon]="IconSalir" [size]="18" [strokeWidth]="1.75"></svg>
+        <span>Cerrar sesión</span>
       </button>
     </div>
   </aside>

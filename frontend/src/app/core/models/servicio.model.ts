@@ -23,6 +23,7 @@ export interface Servicio {
   estado: EstadoServicio;
   empleados: EmpleadoResumen[];
   pagado?: boolean;
+  recurrente?: boolean;
   fechaPago?: string;
   importe?: number;
 }

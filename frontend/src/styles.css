@@ -1,6 +1,21 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --primary: #5b8def;
+  --primary-soft: #e6eefe;
+  --bg: #f8faff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #eceff7;
+}
+
 html, body {
   height: 100%;
   margin: 0;
   overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }

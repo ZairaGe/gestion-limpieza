@@ -1,106 +1,98 @@
-<div class="page-header">
-  <div>
-    <h1>Dashboard</h1>
-    <p>Resumen de la semana · {{ rangoSemana }}</p>
-  </div>
-</div>
+<header class="saludo">
+  <h1>Resumen</h1>
+  <p>Resumen de la semana · {{ rangoSemana }}</p>
+</header>
 
 @if (cargando()) {
-  <p class="loading">Cargando resumen...</p>
-} @else if (resumen()) {
-  <div class="cards-grid">
-    <div class="kpi-card">
-      <div class="kpi-header">
-        <span>Servicios hoy</span>
-        <span class="kpi-icon icon-green">📅</span>
-      </div>
-      <div class="kpi-value">{{ resumen()!.serviciosHoy }}</div>
-    </div>
+  <p class="cargando">Cargando resumen...</p>
+} @else if (resumen(); as r) {
 
-    <div class="kpi-card">
-      <div class="kpi-header">
+  <section class="kpis">
+    <article class="kpi">
+      <div class="kpi-top">
         <span>Ingresos semana</span>
-        <span class="kpi-icon icon-blue">💶</span>
+        <svg [lucideIcon]="IconEuro" [size]="18" ></svg>
       </div>
-      <div class="kpi-value">{{ resumen()!.ingresosSemana | number: '1.2-2' }} €</div>
-    </div>
+      <div class="kpi-valor">{{ r.ingresosSemana | currency:'EUR':'symbol':'1.2-2' }}</div>
+      <div class="kpi-sub">Previsto: {{ r.previstoSemana | currency:'EUR':'symbol':'1.2-2' }}</div>
+    </article>
 
-    <div class="kpi-card">
-      <div class="kpi-header">
+    <article class="kpi">
+      <div class="kpi-top">
+        <span>Servicios hoy</span>
+        <svg [lucideIcon]="IconCalendario" [size]="18" [strokeWidth]="1.75"></svg>
+      </div>
+      <div class="kpi-valor">{{ r.serviciosHoy }}</div>
+    </article>
+
+    <article class="kpi">
+      <div class="kpi-top">
         <span>Trabajadores activos</span>
-        <span class="kpi-icon icon-purple">👥</span>
+        <svg [lucideIcon]="IconActivos" [size]="18" [strokeWidth]="1.75"></svg>
       </div>
-      <div class="kpi-value">{{ resumen()!.trabajadoresActivos }}</div>
-    </div>
+      <div class="kpi-valor">{{ r.trabajadoresActivos }}</div>
+    </article>
 
-    <div class="kpi-card">
-      <div class="kpi-header">
-        <span>Pendientes asignar</span>
-        <span class="kpi-icon icon-amber">⚠</span>
+    <article class="kpi">
+      <div class="kpi-top">
+        <span>Sin servicio hoy</span>
+        <svg [lucideIcon]="IconSinServicio" [size]="18" [strokeWidth]="1.75"></svg>
       </div>
-      <div class="kpi-value">{{ resumen()!.pendientesAsignar }}</div>
-    </div>
-  </div>
+      <div class="kpi-valor">{{ r.sinServicioHoy }}</div>
+      <div class="kpi-sub">Activos por asignar</div>
+    </article>
+  </section>
 
-  <div class="main-grid">
-    <div class="agenda-card">
-      <div class="card-header">
-        <h2>Agenda de hoy</h2>
-        <span class="fecha-hoy">{{ hoyFormateado }}</span>
+  <section class="paneles">
+    <article class="panel">
+      <h2>Ingresos por día</h2>
+      <div class="barras">
+        @for (dia of r.ingresosPorDia; track dia.fecha; let i = $index) {
+          <div class="columna">
+            <div class="zona">
+              <div
+                class="barra"
+                [class.barra-hoy]="dia.hoy"
+                [style.height.%]="alturaBarra(dia)"
+                [title]="'Cobrado: ' + (dia.cobrado | number:'1.2-2') + ' € · Previsto: ' + (dia.previsto | number:'1.2-2') + ' €'"
+              ></div>
+            </div>
+            <span class="etiqueta-dia">{{ etiquetasDias[i] }}</span>
+          </div>
+        }
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-cabecera">
+        <h2>Servicios de hoy</h2>
+        <a routerLink="/servicios" class="ver-todos">Ver todos</a>
       </div>
 
-      @if (resumen()!.agendaHoy.length === 0) {
-        <div class="empty-agenda">
-          <span class="check-icon">✓</span>
-          <p>No hay servicios programados para hoy</p>
-        </div>
+      @if (r.agendaHoy.length === 0) {
+        <p class="vacio">No hay servicios hoy.</p>
       } @else {
-        <div class="agenda-list">
-          @for (servicio of resumen()!.agendaHoy; track servicio.id) {
-            <div class="agenda-item">
-              <div class="agenda-hora">{{ servicio.horaInicio }} - {{ servicio.horaFin }}</div>
-              <div class="agenda-info">
-                <strong>{{ servicio.clienteNombre }}</strong>
-                <span>{{ servicio.direccion }}</span>
+        <div class="lista">
+          @for (s of r.agendaHoy; track s.id) {
+            <div class="item">
+              <div class="item-hora">{{ s.horaInicio.substring(0, 5) }} - {{ s.horaFin.substring(0, 5) }}</div>
+              <div class="item-info">
+                <strong>{{ s.clienteNombre }}</strong>
+                <span>{{ etiquetaTipo(s.tipoServicio) }}</span>
               </div>
-              <span class="badge">{{ servicio.estado }}</span>
+              <div class="item-empleados">
+                @if (s.empleados.length === 0) {
+                  <span class="chip chip-aviso">Sin asignar</span>
+                } @else {
+                  @for (nombre of s.empleados; track nombre) {
+                    <span class="chip">{{ nombre }}</span>
+                  }
+                }
+              </div>
             </div>
           }
         </div>
       }
-    </div>
-
-    <div class="sidebar-cards">
-      <div class="side-card">
-        <h2>Trabajadores</h2>
-        @if (resumen()!.trabajadores.length === 0) {
-          <p class="empty-mini">Sin trabajadores activos.</p>
-        } @else {
-          <ul class="trabajadores-list">
-            @for (t of resumen()!.trabajadores; track t.id) {
-              <li>{{ t.nombre }}</li>
-            }
-          </ul>
-        }
-      </div>
-
-      <div class="side-card">
-        <h2>Tarifas activas</h2>
-        <ul class="tarifas-list">
-          @for (tarifa of resumen()!.tarifasActivas; track tarifa.tipoServicio + tarifa.zona) {
-            <li>
-              <div>
-                <strong>{{ tarifa.zona === 'MADRID' ? 'Madrid' : (tarifa.zona === 'FUERA_MADRID' ? 'Fuera de Madrid' : tarifa.zona) }}</strong>
-                <span>{{ tarifa.tipoServicio }}</span>
-              </div>
-              <span class="precio">
-                {{ tarifa.precioHora ? (tarifa.precioHora + ' €/h') : (tarifa.precioFijo + ' €') }}
-              </span>
-            </li>
-          }
-        </ul>
-      </div>
-
-    </div>
-  </div>
+    </article>
+  </section>
 }

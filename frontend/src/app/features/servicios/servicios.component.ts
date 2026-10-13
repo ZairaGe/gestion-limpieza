@@ -1,11 +1,18 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import {
+  LucideDynamicIcon,
+  LucidePlus,
+  LucidePencil,
+  LucideTrash2,
+  LucideChevronDown
+} from '@lucide/angular';
 import { ServicioService } from '../../core/services/servicio.service';
 import { ClienteService } from '../../core/services/cliente.service';
 import { TarifaService } from '../../core/services/tarifa.service';
 import { EmpleadoService } from '../../core/services/empleado.service';
-import { Servicio, ServicioRequest, EstadoServicio } from '../../core/models/servicio.model';
+import { Servicio, ServicioRequest } from '../../core/models/servicio.model';
 import { Cliente } from '../../core/models/cliente.model';
 import { Tarifa } from '../../core/models/tarifa.model';
 import { Empleado } from '../../core/models/empleado.model';
@@ -16,11 +23,16 @@ import { PaginacionComponent } from '../../shared/components/paginacion/paginaci
 @Component({
   selector: 'app-servicios',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginacionComponent],
+  imports: [CommonModule, FormsModule, PaginacionComponent, LucideDynamicIcon],
   templateUrl: './servicios.component.html',
   styleUrl: './servicios.component.css'
 })
 export class ServiciosComponent implements OnInit {
+
+ readonly IconPlus = LucidePlus;
+readonly IconEditar = LucidePencil;
+readonly IconEliminar = LucideTrash2;
+readonly IconChevron = LucideChevronDown;
 
   servicios = signal<Servicio[]>([]);
   clientes = signal<Cliente[]>([]);
@@ -39,6 +51,47 @@ export class ServiciosComponent implements OnInit {
 
   paginaActual = signal(1);
   itemsPorPagina = 10;
+
+  filtroDesde = signal('');
+  filtroHasta = signal('');
+  filtroEstado = signal('TODOS');
+
+  opcionesFiltro = [
+    { valor: 'TODOS', etiqueta: 'Todos' },
+    { valor: 'PENDIENTE', etiqueta: 'Pendiente' },
+    { valor: 'CONFIRMADO', etiqueta: 'Confirmado' },
+    { valor: 'COMPLETADO', etiqueta: 'Completado' },
+    { valor: 'CANCELADO', etiqueta: 'Cancelado' }
+  ];
+
+  estadosDisponibles = ['PENDIENTE', 'CONFIRMADO', 'COMPLETADO', 'CANCELADO'];
+
+  estadoEtiquetas: Record<string, string> = {
+    PENDIENTE: 'Pendiente',
+    CONFIRMADO: 'Confirmado',
+    COMPLETADO: 'Completado',
+    CANCELADO: 'Cancelado'
+  };
+
+  serviciosFiltrados = computed(() => {
+    const desde = this.filtroDesde();
+    const hasta = this.filtroHasta();
+    const estado = this.filtroEstado();
+    return this.servicios().filter(s =>
+      (estado === 'TODOS' || s.estado === estado) &&
+      (!desde || s.fecha >= desde) &&
+      (!hasta || s.fecha <= hasta)
+    );
+  });
+
+  serviciosPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.itemsPorPagina;
+    return this.serviciosFiltrados().slice(inicio, inicio + this.itemsPorPagina);
+  });
+
+  totalPaginas = computed(() =>
+    Math.max(1, Math.ceil(this.serviciosFiltrados().length / this.itemsPorPagina))
+  );
 
   constructor(
     private servicioService: ServicioService,
@@ -79,6 +132,55 @@ export class ServiciosComponent implements OnInit {
     });
   }
 
+  // ---------- Filtros y formato ----------
+
+  cambiarDesde(valor: string): void {
+    this.filtroDesde.set(valor);
+    this.paginaActual.set(1);
+  }
+
+  cambiarHasta(valor: string): void {
+    this.filtroHasta.set(valor);
+    this.paginaActual.set(1);
+  }
+
+  cambiarFiltroEstado(valor: string): void {
+    this.filtroEstado.set(valor);
+    this.paginaActual.set(1);
+  }
+
+  formatearFecha(fecha: string): string {
+    const [y, m, d] = fecha.split('-').map(Number);
+    const f = new Date(y, m - 1, d);
+    const dia = f.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', '');
+    const mes = f.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '');
+    return `${dia} ${d} ${mes}`;
+  }
+
+  duracionTexto(s: Servicio): string {
+    const horas = s.duracionHoras ?? this.calcularDuracionHoras(s.horaInicio, s.horaFin);
+    return `${horas.toLocaleString('es-ES', { maximumFractionDigits: 2 })}h`;
+  }
+
+  etiquetaTipo(s: Servicio): string {
+    switch (s.tarifaTipoServicio) {
+      case 'CASA': return 'Limpieza de hogar';
+      case 'OFICINA': return 'Limpieza de oficina';
+      case 'EVENTO': return 'Limpieza de evento';
+      default: return 'Servicio de limpieza';
+    }
+  }
+
+  nombresEmpleados(s: Servicio): string {
+    return s.empleados.map(e => e.nombre).join(', ');
+  }
+
+  cambiarPagina(pagina: number): void {
+    this.paginaActual.set(pagina);
+  }
+
+  // ---------- Crear / editar ----------
+
   servicioVacio(): ServicioRequest {
     return {
       clienteId: 0,
@@ -115,7 +217,7 @@ export class ServiciosComponent implements OnInit {
     const [hI, mI] = horaInicio.split(':').map(Number);
     const [hF, mF] = horaFin.split(':').map(Number);
     const minutosTotales = (hF * 60 + mF) - (hI * 60 + mI);
-    return Math.round((minutosTotales / 60) * 4) / 4; // redondea a cuartos de hora
+    return Math.round((minutosTotales / 60) * 4) / 4;
   }
 
   cerrarModal(): void {
@@ -163,6 +265,15 @@ export class ServiciosComponent implements OnInit {
       error: () => this.error.set('No se pudo eliminar el servicio')
     });
   }
+
+  cambiarEstado(servicio: Servicio, nuevoEstado: string): void {
+    this.servicioService.cambiarEstado(servicio.id!, nuevoEstado).subscribe({
+      next: () => this.cargarTodo(),
+      error: () => this.error.set('No se pudo cambiar el estado')
+    });
+  }
+
+  // ---------- Servicio recurrente (sin botón por ahora, se moverá al modal de "Nuevo servicio") ----------
 
   diasDisponibles: { valor: DiaSemana; etiqueta: string }[] = [
     { valor: 'LUNES', etiqueta: 'Lunes' },
@@ -227,25 +338,5 @@ export class ServiciosComponent implements OnInit {
       },
       error: () => this.error.set('No se pudo crear el servicio recurrente')
     });
-  }
-
-  estadosDisponibles = ['PENDIENTE', 'CONFIRMADO', 'COMPLETADO', 'CANCELADO'];
-
-  cambiarEstado(servicio: Servicio, nuevoEstado: string): void {
-    this.servicioService.cambiarEstado(servicio.id!, nuevoEstado).subscribe({
-      next: () => this.cargarTodo(),
-      error: () => this.error.set('No se pudo cambiar el estado')
-    });
-  }
-
-  serviciosPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.itemsPorPagina;
-    return this.servicios().slice(inicio, inicio + this.itemsPorPagina);
-  });
-
-  totalPaginas = computed(() => Math.max(1, Math.ceil(this.servicios().length / this.itemsPorPagina)));
-
-  cambiarPagina(pagina: number): void {
-    this.paginaActual.set(pagina);
   }
 }
