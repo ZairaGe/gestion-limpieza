@@ -164,7 +164,9 @@ export class DistribucionComponent implements OnInit {
       fecha: this.servicioSeleccionado.fecha,
       horaInicio: this.servicioSeleccionado.horaInicio,
       duracionHoras: this.servicioSeleccionado.duracionHoras ?? this.calcularDuracionHoras(this.servicioSeleccionado.horaInicio, this.servicioSeleccionado.horaFin),
-      empleadoIds: this.empleadosSeleccionados
+      empleadoIds: this.empleadosSeleccionados,
+      precio: this.servicioSeleccionado.precioManual ?? null,
+      notas: this.servicioSeleccionado.notas ?? null
     };
 
     this.servicioService.actualizar(this.servicioSeleccionado.id!, request).subscribe({

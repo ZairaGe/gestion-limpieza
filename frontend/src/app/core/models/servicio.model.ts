@@ -1,40 +1,48 @@
+import { DiaSemana } from './servicio-recurrente.model';
+
 export type EstadoServicio = 'PENDIENTE' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO';
 
 export interface EmpleadoResumen {
   id: number;
   nombre: string;
-  horasAsignadas?: number;
+  horasAsignadas: number;
 }
 
 export interface Servicio {
   id?: number;
   clienteId: number;
   clienteNombre: string;
-  tarifaId: number;
-  tarifaTipoServicio: string;
-  tarifaZona: string;
+  tarifaId: number | null;
+  tarifaTipoServicio: string | null;
+  tarifaZona: string | null;
   direccion: string;
   latitud?: number;
   longitud?: number;
   fecha: string;
   horaInicio: string;
-  duracionHoras: number;
   horaFin: string;
+  duracionHoras?: number;
   estado: EstadoServicio;
   empleados: EmpleadoResumen[];
   pagado?: boolean;
-  recurrente?: boolean;
   fechaPago?: string;
   importe?: number;
+  recurrente?: boolean;
+  precioManual?: number | null;
+  notas?: string | null;
 }
 
 export interface ServicioRequest {
   clienteId: number;
-  tarifaId: number;
+  tarifaId: number | null;
   direccion: string;
   fecha: string;
   horaInicio: string;
   duracionHoras: number;
-  horaFin?: string;
   empleadoIds: number[];
+  precio?: number | null;
+  notas?: string | null;
+  estado?: EstadoServicio;
+  diasSemana?: DiaSemana[];
+  repetirHasta?: string;
 }

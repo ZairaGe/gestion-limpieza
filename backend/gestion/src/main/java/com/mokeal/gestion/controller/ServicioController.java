@@ -53,9 +53,8 @@ public class ServicioController {
     }
 
     @PostMapping
-    public ResponseEntity<ServicioResponse> crear(@Valid @RequestBody ServicioRequest request) {
-        ServicioResponse nuevo = servicioService.crear(request);
-        return ResponseEntity.status(201).body(nuevo);
+    public ResponseEntity<List<ServicioResponse>> crear(@Valid @RequestBody ServicioRequest request) {
+        return ResponseEntity.status(201).body(servicioService.crear(request));
     }
 
     @PutMapping("/{id}")

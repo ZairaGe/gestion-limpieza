@@ -99,7 +99,7 @@ public class FacturaPdfService {
     }
 
     private Table construirCabecera(Factura factura) {
-        Table fila = new Table(UnitValue.createPercentArray(new float[]{35, 65})).useAllAvailableWidth();
+        Table fila = new Table(UnitValue.createPercentArray(new float[] { 35, 65 })).useAllAvailableWidth();
 
         Cell celdaLogo = new Cell().setBorder(Border.NO_BORDER).setVerticalAlignment(VerticalAlignment.TOP);
         Image logo = cargarLogo();
@@ -109,17 +109,21 @@ public class FacturaPdfService {
             celdaLogo.add(new Paragraph(empresaNombre).setBold().setFontSize(16));
         }
         celdaLogo.add(new Paragraph(empresaNombre).setFontSize(9).setFontColor(GRIS).setMarginTop(6));
-        if (!empresaNif.isBlank()) celdaLogo.add(new Paragraph(empresaNif).setFontSize(8).setFontColor(GRIS));
-        if (!empresaDireccion.isBlank()) celdaLogo.add(new Paragraph(empresaDireccion).setFontSize(8).setFontColor(GRIS));
-        if (!empresaEmail.isBlank()) celdaLogo.add(new Paragraph(empresaEmail).setFontSize(8).setFontColor(GRIS));
-        if (!empresaTelefono.isBlank()) celdaLogo.add(new Paragraph(empresaTelefono).setFontSize(8).setFontColor(GRIS));
+        if (!empresaNif.isBlank())
+            celdaLogo.add(new Paragraph(empresaNif).setFontSize(8).setFontColor(GRIS));
+        if (!empresaDireccion.isBlank())
+            celdaLogo.add(new Paragraph(empresaDireccion).setFontSize(8).setFontColor(GRIS));
+        if (!empresaEmail.isBlank())
+            celdaLogo.add(new Paragraph(empresaEmail).setFontSize(8).setFontColor(GRIS));
+        if (!empresaTelefono.isBlank())
+            celdaLogo.add(new Paragraph(empresaTelefono).setFontSize(8).setFontColor(GRIS));
 
         Cell celdaDerecha = new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.RIGHT);
         celdaDerecha.add(new Paragraph("FACTURA").setBold().setFontSize(30).setFontColor(GRIS_TITULO));
         celdaDerecha.add(new Paragraph(factura.getNumero()).setBold().setFontSize(14)
                 .setFontColor(NEGRO).setMarginTop(4));
 
-        Table filaInfo = new Table(UnitValue.createPercentArray(new float[]{55, 45}))
+        Table filaInfo = new Table(UnitValue.createPercentArray(new float[] { 55, 45 }))
                 .setWidth(UnitValue.createPercentValue(70))
                 .setHorizontalAlignment(com.itextpdf.layout.properties.HorizontalAlignment.RIGHT)
                 .setMarginTop(10);
@@ -146,7 +150,8 @@ public class FacturaPdfService {
 
     private Div construirCajaCliente(Factura factura) {
         Div caja = new Div().setMarginTop(25);
-        caja.add(new Paragraph("DATOS DEL CLIENTE").setBold().setFontSize(11).setFontColor(GRIS_TITULO).setMarginBottom(6));
+        caja.add(new Paragraph("DATOS DEL CLIENTE").setBold().setFontSize(11).setFontColor(GRIS_TITULO)
+                .setMarginBottom(6));
         caja.add(new Paragraph("Nombre: " + factura.getCliente().getNombre()).setFontSize(9.5f));
         if (factura.getCliente().getNif() != null && !factura.getCliente().getNif().isBlank()) {
             caja.add(new Paragraph("CIF/NIF: " + factura.getCliente().getNif()).setFontSize(9.5f));
@@ -162,39 +167,42 @@ public class FacturaPdfService {
     }
 
     private Table construirTablaConcepto(List<Servicio> servicios) {
-    Table tabla = new Table(UnitValue.createPercentArray(new float[]{42, 16, 21, 21}))
-            .useAllAvailableWidth().setMarginTop(22);
+        Table tabla = new Table(UnitValue.createPercentArray(new float[] { 42, 16, 21, 21 }))
+                .useAllAvailableWidth().setMarginTop(22);
 
-    tabla.addHeaderCell(celdaCabecera("PRODUCTO / SERVICIO", TextAlignment.LEFT));
-    tabla.addHeaderCell(celdaCabecera("CANTIDAD", TextAlignment.CENTER));
-    tabla.addHeaderCell(celdaCabecera("PRECIO/H", TextAlignment.CENTER));
-    tabla.addHeaderCell(celdaCabecera("TOTAL", TextAlignment.RIGHT));
+        tabla.addHeaderCell(celdaCabecera("PRODUCTO / SERVICIO", TextAlignment.LEFT));
+        tabla.addHeaderCell(celdaCabecera("CANTIDAD", TextAlignment.CENTER));
+        tabla.addHeaderCell(celdaCabecera("PRECIO/H", TextAlignment.CENTER));
+        tabla.addHeaderCell(celdaCabecera("TOTAL", TextAlignment.RIGHT));
 
-    boolean alterna = false;
-    for (Servicio s : servicios) {
-        BigDecimal coste = calcularCoste(s);
-        double duracion = obtenerDuracion(s);
-        String etiquetaServicio = etiquetaTipoServicio(s);
+        boolean alterna = false;
+        for (Servicio s : servicios) {
+            BigDecimal coste = calcularCoste(s);
+            double duracion = obtenerDuracion(s);
+            String etiquetaServicio = etiquetaTipoServicio(s);
 
-        tabla.addCell(celdaFila(etiquetaServicio, TextAlignment.LEFT, alterna));
-        tabla.addCell(celdaFila(String.format("%.2f", duracion), TextAlignment.CENTER, alterna));
-        tabla.addCell(celdaFila(String.format("%.2f €", coste.doubleValue() / Math.max(duracion, 0.01)), TextAlignment.CENTER, alterna));
-        tabla.addCell(celdaFila(String.format("%.2f €", coste), TextAlignment.RIGHT, alterna));
-        alterna = !alterna;
+            tabla.addCell(celdaFila(etiquetaServicio, TextAlignment.LEFT, alterna));
+            tabla.addCell(celdaFila(String.format("%.2f", duracion), TextAlignment.CENTER, alterna));
+            tabla.addCell(celdaFila(String.format("%.2f €", coste.doubleValue() / Math.max(duracion, 0.01)),
+                    TextAlignment.CENTER, alterna));
+            tabla.addCell(celdaFila(String.format("%.2f €", coste), TextAlignment.RIGHT, alterna));
+            alterna = !alterna;
+        }
+
+        return tabla;
     }
 
-    return tabla;
-}
-
-private String etiquetaTipoServicio(Servicio s) {
-    String tipo = s.getTarifa().getTipoServicio().name();
-    return switch (tipo) {
-        case "CASA" -> "Limpieza del hogar";
-        case "OFICINA" -> "Limpieza de oficina";
-        case "EVENTO" -> "Limpieza de evento";
-        default -> "Servicio de limpieza";
-    };
-}
+    private String etiquetaTipoServicio(Servicio s) {
+        String tipo = s.getTarifa().getTipoServicio().name();
+        if (s.getTarifa() == null)
+            return "Servicio de limpieza";
+        return switch (tipo) {
+            case "CASA" -> "Limpieza del hogar";
+            case "OFICINA" -> "Limpieza de oficina";
+            case "EVENTO" -> "Limpieza de evento";
+            default -> "Servicio de limpieza";
+        };
+    }
 
     private Cell celdaCabecera(String texto, TextAlignment alineacion) {
         return new Cell().add(new Paragraph(texto).setBold().setFontSize(8.5f))
@@ -215,11 +223,12 @@ private String etiquetaTipoServicio(Servicio s) {
     }
 
     private Table construirFilaInferior(Factura factura) {
-        Table contenedor = new Table(UnitValue.createPercentArray(new float[]{48, 52}))
+        Table contenedor = new Table(UnitValue.createPercentArray(new float[] { 48, 52 }))
                 .useAllAvailableWidth().setMarginTop(20);
 
         Div pago = new Div();
-        pago.add(new Paragraph("DETALLES DE PAGO").setBold().setFontSize(10).setFontColor(GRIS_TITULO).setMarginBottom(5));
+        pago.add(new Paragraph("DETALLES DE PAGO").setBold().setFontSize(10).setFontColor(GRIS_TITULO)
+                .setMarginBottom(5));
         if (!banco.isBlank()) {
             pago.add(new Paragraph("Banco: " + banco).setFontSize(9).setFontColor(GRIS));
         }
@@ -228,11 +237,12 @@ private String etiquetaTipoServicio(Servicio s) {
         }
 
         BigDecimal subtotal = factura.getSubtotal() != null ? factura.getSubtotal() : factura.getImporte();
-        BigDecimal descuentoPct = factura.getDescuentoPorcentaje() != null ? factura.getDescuentoPorcentaje() : BigDecimal.ZERO;
+        BigDecimal descuentoPct = factura.getDescuentoPorcentaje() != null ? factura.getDescuentoPorcentaje()
+                : BigDecimal.ZERO;
         BigDecimal importeDescuento = subtotal.multiply(descuentoPct).divide(BigDecimal.valueOf(100));
         BigDecimal iva = factura.getIvaImporte() != null ? factura.getIvaImporte() : BigDecimal.ZERO;
 
-        Table totales = new Table(UnitValue.createPercentArray(new float[]{55, 45})).useAllAvailableWidth();
+        Table totales = new Table(UnitValue.createPercentArray(new float[] { 55, 45 })).useAllAvailableWidth();
         filaTotal(totales, "BASE IMPONIBLE", String.format("%.2f €", subtotal), false);
         if (descuentoPct.compareTo(BigDecimal.ZERO) > 0) {
             filaTotal(totales, "DESCUENTO (" + descuentoPct.stripTrailingZeros().toPlainString() + "%)",
@@ -241,7 +251,8 @@ private String etiquetaTipoServicio(Servicio s) {
         filaTotal(totales, "IVA (21%)", String.format("%.2f €", iva), false);
         filaTotal(totales, "TOTAL", String.format("%.2f €", factura.getImporte()), true);
 
-        contenedor.addCell(new Cell().add(pago).setBorder(Border.NO_BORDER).setVerticalAlignment(VerticalAlignment.BOTTOM));
+        contenedor.addCell(
+                new Cell().add(pago).setBorder(Border.NO_BORDER).setVerticalAlignment(VerticalAlignment.BOTTOM));
         contenedor.addCell(new Cell().add(totales).setBorder(Border.NO_BORDER).setPadding(0));
 
         return contenedor;

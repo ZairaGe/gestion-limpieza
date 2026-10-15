@@ -66,11 +66,12 @@ public class DashboardService {
                 .map(s -> ServicioHoy.builder()
                         .id(s.getId())
                         .clienteNombre(s.getCliente().getNombre())
-                        .tipoServicio(s.getTarifa().getTipoServicio().name())
+                        .tipoServicio(s.getTarifa() != null ? s.getTarifa().getTipoServicio().name() : null)
                         .horaInicio(s.getHoraInicio())
                         .horaFin(s.getHoraFin())
                         .estado(s.getEstado().name())
-                        .empleados(s.getEmpleados().stream().map(Empleado::getNombre).sorted().collect(Collectors.toList()))
+                        .empleados(s.getEmpleados().stream().map(Empleado::getNombre).sorted()
+                                .collect(Collectors.toList()))
                         .build())
                 .collect(Collectors.toList());
 
@@ -95,8 +96,10 @@ public class DashboardService {
 
     private BigDecimal calcularCoste(Servicio servicio) {
         Tarifa tarifa = servicio.getTarifa();
-        if (tarifa.getPrecioFijo() != null) return tarifa.getPrecioFijo();
-        if (tarifa.getPrecioHora() == null) return BigDecimal.ZERO;
+        if (tarifa.getPrecioFijo() != null)
+            return tarifa.getPrecioFijo();
+        if (tarifa.getPrecioHora() == null)
+            return BigDecimal.ZERO;
         double duracion = servicio.getDuracionHoras() != null
                 ? servicio.getDuracionHoras()
                 : (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;

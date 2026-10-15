@@ -102,64 +102,137 @@
 @if (modalAbierto()) {
 <div class="modal-overlay" (click)="cerrarModal()">
     <div class="modal" (click)="$event.stopPropagation()">
-        <h2>{{ servicioEnEdicion ? 'Editar servicio' : 'Nuevo servicio' }}</h2>
+
+        <div class="modal-cabecera">
+            <h2>{{ servicioEnEdicion ? 'Editar servicio' : 'Nuevo servicio' }}</h2>
+            <button type="button" class="modal-cerrar" (click)="cerrarModal()" aria-label="Cerrar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                </svg>
+            </button>
+        </div>
 
         <form (ngSubmit)="guardarServicio()">
-            <div class="form-group">
-                <label>Cliente</label>
-                <select [(ngModel)]="formServicio.clienteId" name="clienteId" required>
-                    <option [ngValue]="0" disabled>Selecciona un cliente</option>
-                    @for (cliente of clientes(); track cliente.id) {
-                    <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
-                    }
-                </select>
+
+            <div class="fila fila-2">
+                <div class="campo">
+                    <label>Cliente</label>
+                    <select [(ngModel)]="formServicio.clienteId" name="clienteId">
+                        <option [ngValue]="0" disabled>Selecciona…</option>
+                        @for (cliente of clientes(); track cliente.id) {
+                        <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="campo">
+                    <label>Tipo / tarifa</label>
+                    <select [(ngModel)]="formServicio.tarifaId" name="tarifaId">
+                        <option [ngValue]="null">Sin tarifa</option>
+                        @for (tarifa of tarifas(); track tarifa.id) {
+                        <option [ngValue]="tarifa.id">{{ etiquetaTarifa(tarifa) }}</option>
+                        }
+                    </select>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Tarifa</label>
-                <select [(ngModel)]="formServicio.tarifaId" name="tarifaId" required>
-                    <option [ngValue]="0" disabled>Selecciona una tarifa</option>
-                    @for (tarifa of tarifas(); track tarifa.id) {
-                    <option [ngValue]="tarifa.id">
-                        {{ tarifa.tipoServicio }} — {{ tarifa.zona === 'MADRID' ? 'Madrid' : 'Fuera de Madrid' }}
-                    </option>
-                    }
-                </select>
+            <div class="fila fila-3">
+                <div class="campo">
+                    <label>{{ formServicio.recurrente ? 'Desde' : 'Fecha' }}</label>
+                    <input type="date" [(ngModel)]="formServicio.fecha" name="fecha" />
+                </div>
+                <div class="campo">
+                    <label>Empieza</label>
+                    <input type="time" [(ngModel)]="formServicio.horaInicio" name="horaInicio" />
+                </div>
+                <div class="campo">
+                    <label>Acaba</label>
+                    <input type="time" [(ngModel)]="formServicio.horaFin" name="horaFin" />
+                </div>
             </div>
 
-            <div class="form-group">
+            @if (duracionForm() > 0) {
+            <p class="hint-horario">
+                Duración: {{ duracionForm() | number: '1.0-2' }} h
+                @if (formServicio.empleadoIds.length > 1) {
+                · con {{ formServicio.empleadoIds.length }} empleados a la vez terminarán a las {{ horaFinReal() }}
+                }
+            </p>
+            }
+
+            <div class="campo">
                 <label>Dirección</label>
-                <input type="text" [(ngModel)]="formServicio.direccion" name="direccion" required />
+                <input type="text" [(ngModel)]="formServicio.direccion" name="direccion"
+                    placeholder="Calle, número, ciudad" />
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Fecha</label>
-                    <input type="date" [(ngModel)]="formServicio.fecha" name="fecha" required />
+            <div class="fila fila-2">
+                <div class="campo">
+                    <label>Precio (€)</label>
+                    <input type="number" step="0.01" min="0" [(ngModel)]="formServicio.precio" name="precio"
+                        placeholder="Según tarifa" />
                 </div>
-                <div class="form-group">
-                    <label>Hora inicio</label>
-                    <input type="time" [(ngModel)]="formServicio.horaInicio" name="horaInicio" required />
-                </div>
-                <div class="form-group">
-                    <label>Duración (horas)</label>
-                    <input type="number" step="0.25" min="0.25" [(ngModel)]="formServicio.duracionHoras"
-                        name="duracionHoras" required />
+                <div class="campo">
+                    <label>Estado</label>
+                    <select [(ngModel)]="formServicio.estado" name="estado">
+                        @for (e of estadosDisponibles; track e) {
+                        <option [value]="e">{{ estadoEtiquetas[e] }}</option>
+                        }
+                    </select>
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="campo">
                 <label>Empleados asignados</label>
-                <div class="checklist">
-                    @for (empleado of empleados(); track empleado.id) {
-                    <label class="checklist-item">
-                        <input type="checkbox" [checked]="empleadoSeleccionado(empleado.id!)"
-                            (change)="toggleEmpleado(empleado.id!)" />
-                        {{ empleado.nombre }}
-                    </label>
+                <div class="chips">
+                    @for (e of empleados(); track e.id) {
+                    @if (e.activo || empleadoSeleccionado(e.id!)) {
+                    <button type="button" class="chip-sel" [class.chip-sel-activo]="empleadoSeleccionado(e.id!)"
+                        (click)="toggleEmpleado(e.id!)">
+                        {{ e.nombre }}
+                    </button>
+                    }
                     }
                 </div>
             </div>
+
+            <div class="campo">
+                <label>Notas</label>
+                <input type="text" [(ngModel)]="formServicio.notas" name="notas" />
+            </div>
+
+            @if (!servicioEnEdicion) {
+            <div class="recurrente-box">
+                <label class="check-linea">
+                    <input type="checkbox" [ngModel]="formServicio.recurrente"
+                        (ngModelChange)="toggleRecurrente($event)" name="recurrente" />
+                    Servicio recurrente
+                </label>
+
+                @if (formServicio.recurrente) {
+                <div class="recurrente-detalle">
+                    <div class="dias">
+                        @for (d of diasModal; track d.valor) {
+                        <button type="button" class="dia-circulo"
+                            [class.dia-circulo-activo]="formServicio.diasSemana.includes(d.valor)" [title]="d.nombre"
+                            (click)="toggleDiaServicio(d.valor)">
+                            {{ d.letra }}
+                        </button>
+                        }
+                    </div>
+                    <div class="campo campo-hasta">
+                        <label>Hasta</label>
+                        <input type="date" [(ngModel)]="formServicio.repetirHasta" name="repetirHasta" />
+                    </div>
+                </div>
+                }
+            </div>
+            }
+
+            @if (errorModal()) {
+            <p class="error-modal">{{ errorModal() }}</p>
+            }
 
             <div class="modal-actions">
                 <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>

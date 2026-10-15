@@ -12,13 +12,29 @@ import { ServicioService } from '../../core/services/servicio.service';
 import { ClienteService } from '../../core/services/cliente.service';
 import { TarifaService } from '../../core/services/tarifa.service';
 import { EmpleadoService } from '../../core/services/empleado.service';
-import { Servicio, ServicioRequest } from '../../core/models/servicio.model';
+import { Servicio, ServicioRequest, EstadoServicio } from '../../core/models/servicio.model';
 import { Cliente } from '../../core/models/cliente.model';
 import { Tarifa } from '../../core/models/tarifa.model';
 import { Empleado } from '../../core/models/empleado.model';
 import { ServicioRecurrenteService } from '../../core/services/servicio-recurrente.service';
 import { ServicioRecurrenteRequest, DiaSemana } from '../../core/models/servicio-recurrente.model';
 import { PaginacionComponent } from '../../shared/components/paginacion/paginacion.component';
+
+interface FormServicio {
+  clienteId: number;
+  tarifaId: number | null;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  direccion: string;
+  precio: number | null;
+  estado: EstadoServicio;
+  empleadoIds: number[];
+  notas: string;
+  recurrente: boolean;
+  diasSemana: DiaSemana[];
+  repetirHasta: string;
+}
 
 @Component({
   selector: 'app-servicios',
@@ -29,10 +45,10 @@ import { PaginacionComponent } from '../../shared/components/paginacion/paginaci
 })
 export class ServiciosComponent implements OnInit {
 
- readonly IconPlus = LucidePlus;
-readonly IconEditar = LucidePencil;
-readonly IconEliminar = LucideTrash2;
-readonly IconChevron = LucideChevronDown;
+  readonly IconPlus = LucidePlus;
+  readonly IconEditar = LucidePencil;
+  readonly IconEliminar = LucideTrash2;
+  readonly IconChevron = LucideChevronDown;
 
   servicios = signal<Servicio[]>([]);
   clientes = signal<Cliente[]>([]);
@@ -44,7 +60,18 @@ readonly IconChevron = LucideChevronDown;
 
   modalAbierto = signal(false);
   servicioEnEdicion: Servicio | null = null;
-  formServicio: ServicioRequest = this.servicioVacio();
+  formServicio: FormServicio = this.servicioVacio();
+  errorModal = signal<string | null>(null);
+
+  diasModal: { valor: DiaSemana; letra: string; nombre: string }[] = [
+    { valor: 'LUNES', letra: 'L', nombre: 'Lunes' },
+    { valor: 'MARTES', letra: 'M', nombre: 'Martes' },
+    { valor: 'MIERCOLES', letra: 'X', nombre: 'Miércoles' },
+    { valor: 'JUEVES', letra: 'J', nombre: 'Jueves' },
+    { valor: 'VIERNES', letra: 'V', nombre: 'Viernes' },
+    { valor: 'SABADO', letra: 'S', nombre: 'Sábado' },
+    { valor: 'DOMINGO', letra: 'D', nombre: 'Domingo' }
+  ];
 
   modalRecurrenteAbierto = signal(false);
   mensajeExito = signal<string | null>(null);
@@ -181,34 +208,51 @@ readonly IconChevron = LucideChevronDown;
 
   // ---------- Crear / editar ----------
 
-  servicioVacio(): ServicioRequest {
+  servicioVacio(): FormServicio {
     return {
       clienteId: 0,
-      tarifaId: 0,
+      tarifaId: null,
+      fecha: this.aFechaLocal(new Date()),
+      horaInicio: '09:00',
+      horaFin: '11:00',
       direccion: '',
-      fecha: '',
-      horaInicio: '',
-      duracionHoras: 1,
-      empleadoIds: []
+      precio: null,
+      estado: 'PENDIENTE',
+      empleadoIds: [],
+      notas: '',
+      recurrente: false,
+      diasSemana: [],
+      repetirHasta: ''
     };
   }
 
   abrirModalCrear(): void {
     this.servicioEnEdicion = null;
     this.formServicio = this.servicioVacio();
+    this.errorModal.set(null);
     this.modalAbierto.set(true);
   }
 
   abrirModalEditar(servicio: Servicio): void {
     this.servicioEnEdicion = servicio;
+    this.errorModal.set(null);
+    const duracion = servicio.duracionHoras ?? this.calcularDuracionHoras(servicio.horaInicio, servicio.horaFin);
+    const inicio = servicio.horaInicio.substring(0, 5);
+
     this.formServicio = {
       clienteId: servicio.clienteId,
       tarifaId: servicio.tarifaId,
-      direccion: servicio.direccion,
       fecha: servicio.fecha,
-      horaInicio: servicio.horaInicio,
-      duracionHoras: servicio.duracionHoras ?? this.calcularDuracionHoras(servicio.horaInicio, servicio.horaFin),
-      empleadoIds: servicio.empleados.map(e => e.id)
+      horaInicio: inicio,
+      horaFin: this.sumarHoras(inicio, duracion),
+      direccion: servicio.direccion,
+      precio: servicio.precioManual ?? null,
+      estado: servicio.estado,
+      empleadoIds: servicio.empleados.map(e => e.id),
+      notas: servicio.notas ?? '',
+      recurrente: false,
+      diasSemana: [],
+      repetirHasta: ''
     };
     this.modalAbierto.set(true);
   }
@@ -218,6 +262,40 @@ readonly IconChevron = LucideChevronDown;
     const [hF, mF] = horaFin.split(':').map(Number);
     const minutosTotales = (hF * 60 + mF) - (hI * 60 + mI);
     return Math.round((minutosTotales / 60) * 4) / 4;
+  }
+
+  private aFechaLocal(d: Date): string {
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mes}-${dia}`;
+  }
+
+  private sumarHoras(hora: string, horas: number): string {
+    const [h, m] = hora.split(':').map(Number);
+    const total = Math.round(h * 60 + m + horas * 60);
+    const hh = Math.floor(total / 60) % 24;
+    const mm = total % 60;
+    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  }
+
+  duracionForm(): number {
+    const { horaInicio, horaFin } = this.formServicio;
+    if (!horaInicio || !horaFin) return 0;
+    const [hI, mI] = horaInicio.split(':').map(Number);
+    const [hF, mF] = horaFin.split(':').map(Number);
+    const minutos = (hF * 60 + mF) - (hI * 60 + mI);
+    return minutos > 0 ? minutos / 60 : 0;
+  }
+
+  horaFinReal(): string {
+    const n = Math.max(1, this.formServicio.empleadoIds.length);
+    return this.sumarHoras(this.formServicio.horaInicio, this.duracionForm() / n);
+  }
+
+  etiquetaTarifa(t: Tarifa): string {
+    const tipos: Record<string, string> = { CASA: 'Hogar', OFICINA: 'Oficina', EVENTO: 'Evento' };
+    const zona = t.zona === 'MADRID' ? 'Madrid' : 'Fuera de Madrid';
+    return `${tipos[t.tipoServicio] ?? t.tipoServicio} · ${zona}`;
   }
 
   cerrarModal(): void {
@@ -237,22 +315,78 @@ readonly IconChevron = LucideChevronDown;
     }
   }
 
+  toggleRecurrente(valor: boolean): void {
+    this.formServicio.recurrente = valor;
+    if (valor && !this.formServicio.repetirHasta && this.formServicio.fecha) {
+      const [y, m, d] = this.formServicio.fecha.split('-').map(Number);
+      const f = new Date(y, m - 1, d);
+      f.setDate(f.getDate() + 30);
+      this.formServicio.repetirHasta = this.aFechaLocal(f);
+    }
+  }
+
+  toggleDiaServicio(dia: DiaSemana): void {
+    const idx = this.formServicio.diasSemana.indexOf(dia);
+    if (idx > -1) {
+      this.formServicio.diasSemana.splice(idx, 1);
+    } else {
+      this.formServicio.diasSemana.push(dia);
+    }
+  }
+
   guardarServicio(): void {
+    const f = this.formServicio;
+    const duracion = this.duracionForm();
+
+    if (!f.clienteId) { this.errorModal.set('Selecciona un cliente.'); return; }
+    if (!f.direccion.trim()) { this.errorModal.set('Escribe la dirección del servicio.'); return; }
+    if (!f.fecha) { this.errorModal.set('Elige la fecha.'); return; }
+    if (duracion <= 0) { this.errorModal.set('La hora de fin tiene que ser posterior a la de inicio.'); return; }
+
+    const recurrente = f.recurrente && !this.servicioEnEdicion;
+    if (recurrente) {
+      if (f.diasSemana.length === 0) { this.errorModal.set('Elige al menos un día de la semana.'); return; }
+      if (!f.repetirHasta || f.repetirHasta < f.fecha) {
+        this.errorModal.set('"Hasta" tiene que ser igual o posterior a "Desde".');
+        return;
+      }
+    }
+
+    const request: ServicioRequest = {
+      clienteId: f.clienteId,
+      tarifaId: f.tarifaId,
+      direccion: f.direccion.trim(),
+      fecha: f.fecha,
+      horaInicio: f.horaInicio,
+      duracionHoras: duracion,
+      empleadoIds: f.empleadoIds,
+      precio: f.precio,
+      notas: f.notas.trim() || null,
+      estado: f.estado,
+      ...(recurrente ? { diasSemana: f.diasSemana, repetirHasta: f.repetirHasta } : {})
+    };
+
+    this.errorModal.set(null);
+
     if (this.servicioEnEdicion) {
-      this.servicioService.actualizar(this.servicioEnEdicion.id!, this.formServicio).subscribe({
+      this.servicioService.actualizar(this.servicioEnEdicion.id!, request).subscribe({
         next: () => {
           this.cerrarModal();
           this.cargarTodo();
         },
-        error: () => this.error.set('No se pudo actualizar el servicio')
+        error: () => this.errorModal.set('No se pudo actualizar el servicio. Revisa los datos.')
       });
     } else {
-      this.servicioService.crear(this.formServicio).subscribe({
-        next: () => {
+      this.servicioService.crear(request).subscribe({
+        next: (creados) => {
           this.cerrarModal();
+          if (creados.length > 1) {
+            this.mensajeExito.set(`Se han creado ${creados.length} servicios.`);
+            setTimeout(() => this.mensajeExito.set(null), 5000);
+          }
           this.cargarTodo();
         },
-        error: () => this.error.set('No se pudo crear el servicio')
+        error: () => this.errorModal.set('No se pudo crear el servicio. Revisa los datos.')
       });
     }
   }
