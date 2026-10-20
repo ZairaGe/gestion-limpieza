@@ -119,7 +119,8 @@
             <div class="fila fila-2">
                 <div class="campo">
                     <label>Cliente</label>
-                    <select [(ngModel)]="formServicio.clienteId" name="clienteId">
+                    <select [ngModel]="formServicio.clienteId" (ngModelChange)="cambiarCliente($event)"
+                        name="clienteId">
                         <option [ngValue]="0" disabled>Selecciona…</option>
                         @for (cliente of clientes(); track cliente.id) {
                         <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>

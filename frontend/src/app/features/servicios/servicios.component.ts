@@ -233,6 +233,14 @@ export class ServiciosComponent implements OnInit {
     this.modalAbierto.set(true);
   }
 
+  cambiarCliente(clienteId: number): void {
+    this.formServicio.clienteId = clienteId;
+
+    const cliente = this.clientes().find(c => c.id === clienteId);
+
+    this.formServicio.direccion = cliente?.direccion ?? '';
+  }
+
   abrirModalEditar(servicio: Servicio): void {
     this.servicioEnEdicion = servicio;
     this.errorModal.set(null);
