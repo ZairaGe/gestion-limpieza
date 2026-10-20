@@ -2,16 +2,14 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ServicioService } from '../../core/services/servicio.service';
 import { EmpleadoService } from '../../core/services/empleado.service';
+import { PlanningService } from '../../core/services/planning.service';
 import { Servicio, ServicioRequest } from '../../core/models/servicio.model';
 import { Empleado } from '../../core/models/empleado.model';
 import { MapaServiciosComponent } from '../../shared/components/mapa-servicios/mapa-servicios.component';
-import { PlanningService } from '../../core/services/planning.service';
-import { FormsModule } from '@angular/forms';
 
-
-interface DiaSemana {
+interface DiaVista {
   fecha: string;
-  etiqueta: string;
+  numero: number;
   esHoy: boolean;
   servicios: Servicio[];
 }
@@ -19,16 +17,18 @@ interface DiaSemana {
 @Component({
   selector: 'app-distribucion',
   standalone: true,
-  imports: [CommonModule, MapaServiciosComponent, FormsModule],
+  imports: [CommonModule, MapaServiciosComponent],
   templateUrl: './distribucion.component.html',
   styleUrl: './distribucion.component.css'
 })
 export class DistribucionComponent implements OnInit {
 
-  dias = signal<DiaSemana[]>([]);
+  readonly nombresCortos = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+
+  dias = signal<DiaVista[]>([]);
   empleados = signal<Empleado[]>([]);
-  cargando = signal(true);
   error = signal<string | null>(null);
+  diaSeleccionado = signal<string>(this.aIso(new Date()));
 
   inicioSemana = this.obtenerLunes(new Date());
 
@@ -36,12 +36,29 @@ export class DistribucionComponent implements OnInit {
   servicioSeleccionado: Servicio | null = null;
   empleadosSeleccionados: number[] = [];
 
-  serviciosSemana = signal<Servicio[]>([]);
-  diaSeleccionado = signal<string>(this.formatearFecha(new Date()));
+  serviciosDia = computed(() =>
+    this.dias().find(d => d.fecha === this.diaSeleccionado())?.servicios ?? []
+  );
 
-  rangoDesde = this.formatearFecha(this.inicioSemana);
-  rangoHasta = '';
-  incluirMapaEnPdf = true;
+  tituloDia = computed(() => {
+    const d = this.deIso(this.diaSeleccionado());
+    const semana = d.toLocaleDateString('es-ES', { weekday: 'long' });
+    const mes = d.toLocaleDateString('es-ES', { month: 'long' });
+    return `${this.capitalizar(semana)} ${d.getDate()} ${this.capitalizar(mes)}`;
+  });
+
+  rangoSemana = computed(() => {
+    const dias = this.dias();
+    if (dias.length === 0) return '';
+    const ini = this.deIso(dias[0].fecha);
+    const fin = this.deIso(dias[dias.length - 1].fecha);
+    const corto = (d: Date) =>
+      `${d.getDate()} ${d.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '')}`;
+
+    return ini.getFullYear() === fin.getFullYear()
+      ? `${corto(ini)} – ${corto(fin)} ${fin.getFullYear()}`
+      : `${corto(ini)} ${ini.getFullYear()} – ${corto(fin)} ${fin.getFullYear()}`;
+  });
 
   constructor(
     private servicioService: ServicioService,
@@ -54,86 +71,133 @@ export class DistribucionComponent implements OnInit {
     this.cargarSemana();
   }
 
-  obtenerLunes(fecha: Date): Date {
-    const d = new Date(fecha);
-    const diaSemana = d.getDay();
-    const diff = diaSemana === 0 ? -6 : 1 - diaSemana;
-    d.setDate(d.getDate() + diff);
-    d.setHours(0, 0, 0, 0);
-    return d;
+  // ---------- Fechas ----------
+
+  private aIso(d: Date): string {
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mes}-${dia}`;
   }
 
-  formatearFecha(fecha: Date): string {
-    const year = fecha.getFullYear();
-    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-    const dia = fecha.getDate().toString().padStart(2, '0');
-    return `${year}-${mes}-${dia}`;
+  private deIso(iso: string): Date {
+    const [y, m, d] = iso.split('-').map(Number);
+    return new Date(y, m - 1, d);
   }
+
+  private sumarDias(d: Date, n: number): Date {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  }
+
+  private obtenerLunes(fecha: Date): Date {
+    const diaSemana = fecha.getDay();
+    const diff = diaSemana === 0 ? -6 : 1 - diaSemana;
+    return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + diff);
+  }
+
+  private capitalizar(texto: string): string {
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
+
+  // ---------- Carga y navegación ----------
 
   cargarSemana(): void {
-    this.cargando.set(true);
-    const desde = this.formatearFecha(this.inicioSemana);
-    const finSemana = new Date(this.inicioSemana);
-    finSemana.setDate(finSemana.getDate() + 6);
-    const hasta = this.formatearFecha(finSemana);
+    const desde = this.aIso(this.inicioSemana);
+    const hasta = this.aIso(this.sumarDias(this.inicioSemana, 6));
 
     this.servicioService.listarPorRango(desde, hasta).subscribe({
       next: (servicios) => {
-        this.serviciosSemana.set(servicios);
-        //this.dias.set(this.agruparPorDia(servicios));
-        const diasNuevos = this.agruparPorDia(servicios);
-        this.dias.set(diasNuevos);
-
-        const siguSeleccionado = diasNuevos.some(d => d.fecha === this.diaSeleccionado());
-        if (!siguSeleccionado) {
-          this.diaSeleccionado.set(diasNuevos[0].fecha);
+        const dias = this.agruparPorDia(servicios);
+        this.dias.set(dias);
+        if (!dias.some(d => d.fecha === this.diaSeleccionado())) {
+          this.diaSeleccionado.set(dias[0].fecha);
         }
-        this.cargando.set(false);
+        this.error.set(null);
       },
-      error: () => {
-        this.error.set('No se pudieron cargar los servicios de la semana');
-        this.cargando.set(false);
-      }
+      error: () => this.error.set('No se pudieron cargar los servicios de la semana')
     });
   }
 
-  agruparPorDia(servicios: Servicio[]): DiaSemana[] {
-    const hoyStr = this.formatearFecha(new Date());
-    const dias: DiaSemana[] = [];
-    const nombresDias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  private agruparPorDia(servicios: Servicio[]): DiaVista[] {
+    const hoy = this.aIso(new Date());
+    const activos = servicios.filter(s => s.estado !== 'CANCELADO');
+    const dias: DiaVista[] = [];
 
     for (let i = 0; i < 7; i++) {
-      const fecha = new Date(this.inicioSemana);
-      fecha.setDate(fecha.getDate() + i);
-      const fechaStr = this.formatearFecha(fecha);
-
+      const fecha = this.sumarDias(this.inicioSemana, i);
+      const iso = this.aIso(fecha);
       dias.push({
-        fecha: fechaStr,
-        etiqueta: `${nombresDias[i]} ${fecha.getDate()}/${fecha.getMonth() + 1}`,
-        esHoy: fechaStr === hoyStr,
-        servicios: servicios
-          .filter(s => s.fecha === fechaStr)
+        fecha: iso,
+        numero: fecha.getDate(),
+        esHoy: iso === hoy,
+        servicios: activos
+          .filter(s => s.fecha === iso)
           .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio))
       });
     }
-
     return dias;
   }
 
   semanaAnterior(): void {
-    this.inicioSemana.setDate(this.inicioSemana.getDate() - 7);
+    this.inicioSemana = this.sumarDias(this.inicioSemana, -7);
     this.cargarSemana();
   }
 
   semanaSiguiente(): void {
-    this.inicioSemana.setDate(this.inicioSemana.getDate() + 7);
+    this.inicioSemana = this.sumarDias(this.inicioSemana, 7);
     this.cargarSemana();
   }
 
   irAHoy(): void {
-    this.inicioSemana = this.obtenerLunes(new Date());
+    const hoy = new Date();
+    this.inicioSemana = this.obtenerLunes(hoy);
+    this.diaSeleccionado.set(this.aIso(hoy));
     this.cargarSemana();
   }
+
+  seleccionarDia(fecha: string): void {
+    this.diaSeleccionado.set(fecha);
+  }
+
+  // ---------- Presentación ----------
+
+  claseEstado(s: Servicio): string {
+    return 'chip-' + s.estado.toLowerCase();
+  }
+
+  primerNombre(nombre: string): string {
+    return nombre.trim().split(/\s+/)[0];
+  }
+
+  etiquetaTipo(s: Servicio): string {
+    switch (s.tarifaTipoServicio) {
+      case 'CASA': return 'Limpieza de hogar';
+      case 'OFICINA': return 'Limpieza de oficina';
+      case 'EVENTO': return 'Limpieza de evento';
+      default: return 'Servicio de limpieza';
+    }
+  }
+
+  // ---------- Descargas ----------
+
+  descargarMes(): void {
+    const d = this.deIso(this.diaSeleccionado());
+    const desde = this.aIso(new Date(d.getFullYear(), d.getMonth(), 1));
+    const hasta = this.aIso(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+    this.planningService.descargarPlanningGeneral(desde, hasta);
+  }
+
+  descargarSemanaPorTrabajador(): void {
+    const dias = this.dias();
+    if (dias.length === 0) return;
+    this.planningService.descargarPorTrabajador(dias[0].fecha, dias[dias.length - 1].fecha);
+  }
+
+  descargarDiaPorTrabajador(): void {
+    const dia = this.diaSeleccionado();
+    this.planningService.descargarPorTrabajador(dia, dia);
+  }
+
+  // ---------- Asignar trabajadores ----------
 
   abrirAsignacion(servicio: Servicio): void {
     this.servicioSeleccionado = servicio;
@@ -145,6 +209,10 @@ export class DistribucionComponent implements OnInit {
     this.modalAbierto.set(false);
   }
 
+  empleadoMarcado(id: number): boolean {
+    return this.empleadosSeleccionados.includes(id);
+  }
+
   toggleEmpleado(id: number): void {
     const idx = this.empleadosSeleccionados.indexOf(id);
     if (idx > -1) {
@@ -154,22 +222,30 @@ export class DistribucionComponent implements OnInit {
     }
   }
 
+  private calcularDuracionHoras(horaInicio: string, horaFin: string): number {
+    const [hI, mI] = horaInicio.split(':').map(Number);
+    const [hF, mF] = horaFin.split(':').map(Number);
+    const minutos = (hF * 60 + mF) - (hI * 60 + mI);
+    return Math.round((minutos / 60) * 4) / 4;
+  }
+
   guardarAsignacion(): void {
-    if (!this.servicioSeleccionado) return;
+    const s = this.servicioSeleccionado;
+    if (!s) return;
 
     const request: ServicioRequest = {
-      clienteId: this.servicioSeleccionado.clienteId,
-      tarifaId: this.servicioSeleccionado.tarifaId,
-      direccion: this.servicioSeleccionado.direccion,
-      fecha: this.servicioSeleccionado.fecha,
-      horaInicio: this.servicioSeleccionado.horaInicio,
-      duracionHoras: this.servicioSeleccionado.duracionHoras ?? this.calcularDuracionHoras(this.servicioSeleccionado.horaInicio, this.servicioSeleccionado.horaFin),
+      clienteId: s.clienteId,
+      tarifaId: s.tarifaId,
+      direccion: s.direccion,
+      fecha: s.fecha,
+      horaInicio: s.horaInicio,
+      duracionHoras: s.duracionHoras ?? this.calcularDuracionHoras(s.horaInicio, s.horaFin),
       empleadoIds: this.empleadosSeleccionados,
-      precio: this.servicioSeleccionado.precioManual ?? null,
-      notas: this.servicioSeleccionado.notas ?? null
+      precio: s.precioManual ?? null,
+      notas: s.notas ?? null
     };
 
-    this.servicioService.actualizar(this.servicioSeleccionado.id!, request).subscribe({
+    this.servicioService.actualizar(s.id!, request).subscribe({
       next: () => {
         this.cerrarModal();
         this.cargarSemana();
@@ -177,49 +253,4 @@ export class DistribucionComponent implements OnInit {
       error: () => this.error.set('No se pudo actualizar la asignación')
     });
   }
-
-
-
-  private aRadianes(grados: number): number {
-    return grados * (Math.PI / 180);
-  }
-
-
-  servicioDiaSeleccionado = computed(() => {
-    const dia = this.dias().find(d => d.fecha === this.diaSeleccionado());
-    return dia ? dia.servicios : [];
-  });
-
-  etiquetaDiaSeleccionado = computed(() => {
-    const dia = this.dias().find(d => d.fecha === this.diaSeleccionado());
-    return dia ? dia.etiqueta : '';
-  });
-
-  seleccionarDia(fecha: string): void {
-    this.diaSeleccionado.set(fecha);
-  }
-
-  empleadosDelDia = computed(() => {
-    const servicios = this.servicioDiaSeleccionado();
-    const mapa = new Map<number, string>();
-    servicios.forEach(s => s.empleados.forEach(e => mapa.set(e.id, e.nombre)));
-    return Array.from(mapa.entries()).map(([id, nombre]) => ({ id, nombre }));
-  });
-
-  descargarPlanning(empleadoId: number): void {
-    this.planningService.descargarPlanning(empleadoId, this.diaSeleccionado());
-  }
-
-  private calcularDuracionHoras(horaInicio: string, horaFin: string): number {
-    const [hI, mI] = horaInicio.split(':').map(Number);
-    const [hF, mF] = horaFin.split(':').map(Number);
-    const minutosTotales = (hF * 60 + mF) - (hI * 60 + mI);
-    return Math.round((minutosTotales / 60) * 4) / 4;
-  }
-
-  descargarPlanningGeneral(): void {
-    if (!this.rangoDesde || !this.rangoHasta) return;
-    this.planningService.descargarPlanningGeneral(this.rangoDesde, this.rangoHasta);
-  }
-
 }

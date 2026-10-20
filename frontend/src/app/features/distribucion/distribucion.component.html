@@ -1,114 +1,146 @@
-<div class="page-header">
+<header class="page-header">
     <div>
         <h1>Distribución</h1>
-        <p>Reparte los servicios de la semana entre los trabajadores.</p>
+        <p>Mapa de servicios y calendario semanal</p>
     </div>
-    <div class="semana-nav">
-        <button class="btn-secondary" (click)="semanaAnterior()">←</button>
-        <button class="btn-secondary" (click)="irAHoy()">Hoy</button>
-        <button class="btn-secondary" (click)="semanaSiguiente()">→</button>
+
+    <div class="descargas">
+        <button class="btn-descarga" (click)="descargarMes()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
+            Mes completo (jefa)
+        </button>
+        <button class="btn-descarga" (click)="descargarSemanaPorTrabajador()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
+            Semana por trabajador
+        </button>
+        <button class="btn-descarga" (click)="descargarDiaPorTrabajador()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
+            Día por trabajador
+        </button>
     </div>
+</header>
+
+<div class="nav-semana">
+    <button class="btn-nav" (click)="semanaAnterior()" aria-label="Semana anterior">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6" />
+        </svg>
+    </button>
+    <span class="rango">{{ rangoSemana() }}</span>
+    <button class="btn-nav" (click)="semanaSiguiente()" aria-label="Semana siguiente">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="m9 18 6-6-6-6" />
+        </svg>
+    </button>
+    <button class="btn-hoy" (click)="irAHoy()">Hoy</button>
 </div>
 
-@if (cargando()) {
-<p class="loading">Cargando semana...</p>
-} @else if (error()) {
-<p class="error-message">{{ error() }}</p>
-} @else {
-<div class="semana-grid">
-    @for (dia of dias(); track dia.fecha) {
-    <div class="dia-columna" [class.dia-hoy]="dia.esHoy" [class.dia-seleccionada]="dia.fecha === diaSeleccionado()">
-        <div class="dia-header" (click)="seleccionarDia(dia.fecha)">{{ dia.etiqueta }}</div>
+@if (error()) {
+<p class="error-msg">{{ error() }}</p>
+}
 
-        <div class="dia-servicios-scroll">
-            @if (dia.servicios.length === 0) {
-            <p class="dia-vacio">Sin servicios</p>
-            } @else {
-            @for (servicio of dia.servicios; track servicio.id) {
-            <div class="servicio-card" (click)="abrirAsignacion(servicio)">
-
-                <div class="servicio-hora">{{ servicio.horaInicio }} - {{ servicio.horaFin }} · {{
-                    servicio.duracionHoras | number: '1.1-2' }}h contratadas</div>
-                <div class="servicio-cliente">{{ servicio.clienteNombre }}</div>
-                <div class="servicio-direccion">{{ servicio.direccion }}</div>
-
-                @if (servicio.empleados.length === 0) {
-                <span class="empleado-chip chip-vacio">Sin asignar</span>
-                } @else {
-                @for (emp of servicio.empleados; track emp.id) {
-                <span class="empleado-chip"
-                    title="Horas de trabajo imputadas (el servicio dura {{ servicio.horaInicio }} - {{ servicio.horaFin }})">
-                    {{ emp.nombre }} ({{ emp.horasAsignadas | number: '1.1-2' }}h)
-                </span>
-                }
-                }
+<section class="semana">
+    @for (dia of dias(); track dia.fecha; let i = $index) {
+    <div class="dia" [class.dia-sel]="dia.fecha === diaSeleccionado()" [class.dia-hoy]="dia.esHoy"
+        (click)="seleccionarDia(dia.fecha)">
+        <span class="dia-nombre">{{ nombresCortos[i] }}</span>
+        <span class="dia-num">{{ dia.numero }}</span>
+        <div class="dia-chips">
+            @for (s of dia.servicios; track s.id) {
+            <div class="mini-chip" [ngClass]="claseEstado(s)">
+                {{ s.horaInicio.substring(0, 5) }} {{ primerNombre(s.clienteNombre) }}
             </div>
-
-
-            }
             }
         </div>
     </div>
     }
-</div>
-<div class="mapa-section">
-    <h2>Servicios del {{ etiquetaDiaSeleccionado() }}</h2>
-    <app-mapa-servicios [servicios]="servicioDiaSeleccionado()"></app-mapa-servicios>
-</div>
-<div class="planning-section">
-    <h2>Planning del día — descarga por trabajador</h2>
+</section>
 
-    @if (empleadosDelDia().length === 0) {
-    <p class="empty-mini">Nadie tiene servicios asignados este día todavía.</p>
-    } @else {
-    <div class="planning-lista">
-        @for (emp of empleadosDelDia(); track emp.id) {
-        <div class="planning-item">
-            <span>{{ emp.nombre }}</span>
-            <button class="btn-secondary" (click)="descargarPlanning(emp.id)">⬇ Descargar PDF</button>
+<section class="inferior">
+    <div class="mapa-card">
+        <app-mapa-servicios [servicios]="serviciosDia()"></app-mapa-servicios>
+    </div>
+
+    <aside class="dia-panel">
+        <h2>{{ tituloDia() }}</h2>
+
+        @if (serviciosDia().length === 0) {
+        <p class="vacio">No hay servicios este día.</p>
+        } @else {
+        <div class="lista">
+            @for (s of serviciosDia(); track s.id) {
+            <div class="item" (click)="abrirAsignacion(s)">
+                <div class="item-hora">{{ s.horaInicio.substring(0, 5) }}–{{ s.horaFin.substring(0, 5) }}</div>
+                <div class="item-info">
+                    <strong>{{ s.clienteNombre }}</strong>
+                    <span>{{ etiquetaTipo(s) }} · {{ s.direccion }}</span>
+                </div>
+                <div class="item-empleados">
+                    @if (s.empleados.length === 0) {
+                    <span class="chip chip-aviso">Sin asignar</span>
+                    } @else {
+                    @for (emp of s.empleados; track emp.id) {
+                    <span class="chip">{{ emp.nombre }} · {{ emp.horasAsignadas | number: '1.0-2' }}h</span>
+                    }
+                    }
+                </div>
+            </div>
+            }
         </div>
         }
-    </div>
-    }
-</div>
-<div class="planning-section">
-    <h2>Descargar planning por rango de fechas</h2>
-    <div class="rango-form">
-        <div class="form-group">
-            <label>Desde</label>
-            <input type="date" [(ngModel)]="rangoDesde" />
-        </div>
-        <div class="form-group">
-            <label>Hasta</label>
-            <input type="date" [(ngModel)]="rangoHasta" />
-        </div>
-        <button class="btn-primary" (click)="descargarPlanningGeneral()">⬇ Descargar PDF</button>
-    </div>
-</div>
-}
+    </aside>
+</section>
 
 @if (modalAbierto()) {
 <div class="modal-overlay" (click)="cerrarModal()">
     <div class="modal" (click)="$event.stopPropagation()">
-        <h2>Asignar trabajadores</h2>
-        <p class="modal-subtitle">
-            {{ servicioSeleccionado?.clienteNombre }} — {{ servicioSeleccionado?.horaInicio }} a {{
-            servicioSeleccionado?.horaFin }}
+        <div class="modal-cabecera">
+            <h2>Asignar trabajadores</h2>
+            <button type="button" class="modal-cerrar" (click)="cerrarModal()" aria-label="Cerrar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <p class="modal-sub">
+            {{ servicioSeleccionado?.clienteNombre }} · {{ servicioSeleccionado?.horaInicio?.substring(0, 5) }}–{{
+            servicioSeleccionado?.horaFin?.substring(0, 5) }}
         </p>
 
-        <div class="checklist">
-            @for (empleado of empleados(); track empleado.id) {
-            <label class="checklist-item">
-                <input type="checkbox" [checked]="empleadosSeleccionados.includes(empleado.id!)"
-                    (change)="toggleEmpleado(empleado.id!)" />
-                {{ empleado.nombre }}
-            </label>
+        <div class="chips">
+            @for (e of empleados(); track e.id) {
+            @if (e.activo || empleadoMarcado(e.id!)) {
+            <button type="button" class="chip-sel" [class.chip-sel-activo]="empleadoMarcado(e.id!)"
+                (click)="toggleEmpleado(e.id!)">
+                {{ e.nombre }}
+            </button>
+            }
             }
         </div>
 
         <div class="modal-actions">
-            <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
-            <button type="button" class="btn-primary" (click)="guardarAsignacion()">Guardar</button>
+            <button type="button" class="btn-secundario" (click)="cerrarModal()">Cancelar</button>
+            <button type="button" class="btn-principal" (click)="guardarAsignacion()">Guardar</button>
         </div>
     </div>
 </div>
