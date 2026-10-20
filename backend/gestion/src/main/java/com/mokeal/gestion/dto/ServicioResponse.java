@@ -25,7 +25,10 @@ public class ServicioResponse {
     private Double latitud;
     private Double longitud;
     private Boolean pagado;
+    private Boolean recurrente;
     private LocalDate fechaPago;
+    private BigDecimal precioManual;
+    private String notas;
     private BigDecimal importe;
     private Double duracionHoras;
     private Set<EmpleadoResumen> empleados;

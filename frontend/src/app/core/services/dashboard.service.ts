@@ -3,41 +3,32 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-export interface ServicioResumen {
+export interface DiaIngreso {
+  fecha: string;
+  hoy: boolean;
+  previsto: number;
+  cobrado: number;
+}
+
+export interface ServicioHoy {
   id: number;
   clienteNombre: string;
+  tipoServicio: string;
   horaInicio: string;
   horaFin: string;
-  direccion: string;
   estado: string;
+  empleados: string[];
 }
 
-export interface EmpleadoResumen {
-  id: number;
-  nombre: string;
-}
-
-export interface TarifaResumen {
-  tipoServicio: string;
-  zona: string;
-  precioHora: number | null;
-  precioFijo: number | null;
-}
-
-export interface ResumenSemanal {
-  totalServicios: number;
-  pendientes: number;
-}
 
 export interface DashboardResumen {
-  serviciosHoy: number;
   ingresosSemana: number;
+  previstoSemana: number;
+  serviciosHoy: number;
   trabajadoresActivos: number;
-  pendientesAsignar: number;
-  agendaHoy: ServicioResumen[];
-  trabajadores: EmpleadoResumen[];
-  tarifasActivas: TarifaResumen[];
-  resumenSemanal: ResumenSemanal;
+  sinServicioHoy: number;
+  ingresosPorDia: DiaIngreso[];
+  agendaHoy: ServicioHoy[];
 }
 
 @Injectable({ providedIn: 'root' })

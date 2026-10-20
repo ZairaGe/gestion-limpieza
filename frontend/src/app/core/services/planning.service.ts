@@ -24,16 +24,30 @@ export class PlanningService {
   }
 
   descargarPlanningGeneral(desde: string, hasta: string): void {
-  this.http.get(`${this.apiUrl}/general`, {
-    params: { desde, hasta },
-    responseType: 'blob'
-  }).subscribe(pdfBlob => {
-    const url = window.URL.createObjectURL(pdfBlob);
-    const enlace = document.createElement('a');
-    enlace.href = url;
-    enlace.download = `planning_${desde}_${hasta}.pdf`;
-    enlace.click();
-    window.URL.revokeObjectURL(url);
-  });
-}
+    this.http.get(`${this.apiUrl}/general`, {
+      params: { desde, hasta },
+      responseType: 'blob'
+    }).subscribe(pdfBlob => {
+      const url = window.URL.createObjectURL(pdfBlob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = `planning_${desde}_${hasta}.pdf`;
+      enlace.click();
+      window.URL.revokeObjectURL(url);
+    });
+  }
+
+  descargarPorTrabajador(desde: string, hasta: string): void {
+    this.http.get(`${this.apiUrl}/por-trabajador`, {
+      params: { desde, hasta },
+      responseType: 'blob'
+    }).subscribe(pdfBlob => {
+      const url = window.URL.createObjectURL(pdfBlob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = `planning_trabajadores_${desde}_${hasta}.pdf`;
+      enlace.click();
+      window.URL.revokeObjectURL(url);
+    });
+  }
 }

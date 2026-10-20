@@ -3,6 +3,8 @@ package com.mokeal.gestion.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashSet;
@@ -26,9 +28,8 @@ public class Servicio {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @NotNull(message = "La tarifa es obligatoria")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tarifa_id", nullable = false)
+    @JoinColumn(name = "tarifa_id")
     private Tarifa tarifa;
 
     @NotBlank(message = "La dirección es obligatoria")
@@ -65,10 +66,34 @@ public class Servicio {
     @Column(nullable = false)
     private boolean pagado;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal precioManual;
+
+    @Column(length = 500)
+    private String notas;
+
+    @Column(nullable = false)
+    private boolean recurrente;
+
     private LocalDate fechaPago;
 
     @ManyToMany
     @JoinTable(name = "servicio_empleado", joinColumns = @JoinColumn(name = "servicio_id"), inverseJoinColumns = @JoinColumn(name = "empleado_id"))
     @Builder.Default
     private Set<Empleado> empleados = new HashSet<>();
+
+    public BigDecimal calcularImporte() {
+        if (precioManual != null)
+            return precioManual;
+        if (tarifa == null)
+            return BigDecimal.ZERO;
+        if (tarifa.getPrecioFijo() != null)
+            return tarifa.getPrecioFijo();
+        if (tarifa.getPrecioHora() == null)
+            return BigDecimal.ZERO;
+        double horas = duracionHoras != null
+                ? duracionHoras
+                : (horaFin.toSecondOfDay() - horaInicio.toSecondOfDay()) / 3600.0;
+        return tarifa.getPrecioHora().multiply(BigDecimal.valueOf(horas));
+    }
 }

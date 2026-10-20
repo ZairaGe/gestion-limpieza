@@ -23,8 +23,8 @@ export class ServicioService {
     return this.http.get<Servicio>(`${this.apiUrl}/${id}`);
   }
 
-  crear(servicio: ServicioRequest): Observable<Servicio> {
-    return this.http.post<Servicio>(this.apiUrl, servicio);
+  crear(servicio: ServicioRequest): Observable<Servicio[]> {
+    return this.http.post<Servicio[]>(this.apiUrl, servicio);
   }
 
   actualizar(id: number, servicio: ServicioRequest): Observable<Servicio> {

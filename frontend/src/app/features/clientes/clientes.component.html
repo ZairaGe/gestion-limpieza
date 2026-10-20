@@ -1,106 +1,191 @@
+
 <div class="page-header">
   <div>
     <h1>Clientes</h1>
-    <p>Gestiona los clientes de Mokeal.</p>
+    <p>Datos de contacto de tus clientes</p>
   </div>
-  <button class="btn-primary" (click)="abrirModalCrear()">+ Nuevo cliente</button>
+
+  <button class="btn-primary" (click)="abrirModalCrear()">
+    <span class="plus">+</span>
+    Añadir
+  </button>
+</div>
+
+<div class="toolbar">
+  <input
+    type="text"
+    class="search-input"
+    placeholder="Buscar..."
+    [ngModel]="busqueda()"
+    (ngModelChange)="busqueda.set($event)"
+  />
 </div>
 
 @if (cargando()) {
-<p class="loading">Cargando clientes...</p>
+  <p class="loading">Cargando clientes...</p>
 } @else if (error()) {
-<p class="error-message">{{ error() }}</p>
-} @else if (clientes().length === 0) {
-<div class="empty-state">
-  <p>Todavía no hay clientes registrados.</p>
-</div>
+  <p class="error-message">{{ error() }}</p>
+} @else if (clientesFiltrados().length === 0) {
+  <div class="empty-state">
+    <p>
+      {{ busqueda()
+        ? 'No se han encontrado clientes.'
+        : 'Todavía no hay clientes registrados.' }}
+    </p>
+  </div>
 } @else {
-<div class="table-card">
-  <table>
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Tipo</th>
-        <th>Teléfono</th>
-        <th>Email</th>
-        <th>Dirección</th>
-        <th>C.P.</th>
-        <th>NIF/DNI</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (cliente of clientes(); track cliente.id) {
-      <tr>
-        <td>{{ cliente.nombre }}</td>
-        <td>
-          <span class="badge" [class.badge-empresa]="cliente.tipo === 'EMPRESA'">
-            {{ cliente.tipo }}
-          </span>
-        </td>
-        <td>{{ cliente.telefono || '—' }}</td>
-        <td>{{ cliente.email || '—' }}</td>
-        <td>{{ cliente.direccion || '—' }}</td>
-        <td>{{ cliente.codigoPostal || '—' }}</td>
-        <td>{{ cliente.nif || '—' }}</td>
-        <td class="acciones">
-          <button class="btn-icon" title="Editar" (click)="abrirModalEditar(cliente)">✎</button>
-          <button class="btn-icon btn-danger" title="Eliminar" (click)="eliminarCliente(cliente.id!)">🗑</button>
-        </td>
-      </tr>
-      }
-    </tbody>
-  </table>
-</div>
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Apellido</th>
+          <th>Teléfono</th>
+          <th>Correo</th>
+          <th>Dirección</th>
+          <th class="th-actions"></th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (cliente of clientesFiltrados(); track cliente.id) {
+          <tr>
+            <td>{{ cliente.nombre }}</td>
+            <td>{{ cliente.apellido || '—' }}</td>
+
+            <td>
+              @if (cliente.telefono) {
+                <span class="contact-cell">
+                  <span class="contact-icon">🕻</span>
+                  {{ cliente.telefono }}
+                </span>
+              } @else {
+                —
+              }
+            </td>
+
+            <td>
+              @if (cliente.email) {
+                <span class="contact-cell">
+                  <span class="contact-icon">✉</span>
+                  {{ cliente.email }}
+                </span>
+              } @else {
+                —
+              }
+            </td>
+
+            <td>
+              @if (cliente.direccion) {
+                <span class="contact-cell">
+                  <span class="location-icon">⚲</span>
+                  {{ cliente.direccion }}
+                </span>
+              } @else {
+                —
+              }
+            </td>
+
+            <td class="acciones">
+              <button
+                class="btn-icon"
+                title="Editar"
+                aria-label="Editar cliente"
+                (click)="abrirModalEditar(cliente)"
+              >
+                <svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/>
+                </svg>
+              </button>
+
+              <button
+                class="btn-icon btn-delete"
+                title="Eliminar"
+                aria-label="Eliminar cliente"
+                (click)="eliminarCliente(cliente.id!)"
+              >
+                <svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18"/>
+                  <path d="M8 6V4h8v2"/>
+                  <path d="m19 6-1 14H6L5 6"/>
+                  <path d="M10 11v5M14 11v5"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
 }
 
 @if (modalAbierto()) {
-<div class="modal-overlay" (click)="cerrarModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <h2>{{ clienteEnEdicion ? 'Editar cliente' : 'Nuevo cliente' }}</h2>
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>{{ clienteEnEdicion ? 'Editar cliente' : 'Nuevo cliente' }}</h2>
 
-    <form (ngSubmit)="guardarCliente()">
-      <div class="form-group">
-        <label>Nombre</label>
-        <input type="text" [(ngModel)]="formCliente.nombre" name="nombre" required />
-      </div>
+      <form (ngSubmit)="guardarCliente()">
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" [(ngModel)]="formCliente.nombre"
+            name="nombre" required />
+        </div>
 
-      <div class="form-group">
-        <label>Tipo</label>
-        <select [(ngModel)]="formCliente.tipo" name="tipo">
-          <option value="PARTICULAR">Particular</option>
-          <option value="EMPRESA">Empresa</option>
-        </select>
-      </div>
+        <div class="form-group">
+          <label>Apellido</label>
+          <input type="text" [(ngModel)]="formCliente.apellido"
+            name="apellido" />
+        </div>
 
-      <div class="form-group">
-        <label>Teléfono</label>
-        <input type="text" [(ngModel)]="formCliente.telefono" name="telefono" />
-      </div>
+        <div class="form-group">
+          <label>Tipo</label>
+          <select [(ngModel)]="formCliente.tipo" name="tipo">
+            <option value="PARTICULAR">Particular</option>
+            <option value="EMPRESA">Empresa</option>
+          </select>
+        </div>
 
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" [(ngModel)]="formCliente.email" name="email" />
-      </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" [(ngModel)]="formCliente.telefono"
+            name="telefono" />
+        </div>
 
-      <div class="form-group">
-        <label>Dirección</label>
-        <input type="text" [(ngModel)]="formCliente.direccion" name="direccion" />
-      </div>
-      <div class="form-group">
-        <label>Código postal</label>
-        <input type="text" [(ngModel)]="formCliente.codigoPostal" name="codigoPostal" maxlength="5"
-          placeholder="28001" />
-      </div>
-      <div class="form-group">
-        <label>NIF/DNI</label>
-        <input type="text" [(ngModel)]="formCliente.nif" name="nif" maxlength="9" placeholder="12345678A" />
-      </div>
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="email" [(ngModel)]="formCliente.email"
+            name="email" />
+        </div>
 
-      <div class="modal-actions">
-        <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
-        <button type="submit" class="btn-primary">Guardar</button>
-      </div>
-    </form>
+        <div class="form-group">
+          <label>Dirección</label>
+          <input type="text" [(ngModel)]="formCliente.direccion"
+            name="direccion" />
+        </div>
+
+        <div class="form-group">
+          <label>Código postal</label>
+          <input type="text" [(ngModel)]="formCliente.codigoPostal"
+            name="codigoPostal" maxlength="5" placeholder="28001" />
+        </div>
+
+        <div class="form-group">
+          <label>NIF/DNI</label>
+          <input type="text" [(ngModel)]="formCliente.nif"
+            name="nif" maxlength="9" placeholder="12345678A" />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary"
+            (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
 }

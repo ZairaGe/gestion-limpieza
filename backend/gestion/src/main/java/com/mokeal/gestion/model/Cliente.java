@@ -21,6 +21,9 @@ public class Cliente {
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    @Column(length = 100)
+    private String apellido;
+
     @Column(length = 20)
     private String telefono;
 

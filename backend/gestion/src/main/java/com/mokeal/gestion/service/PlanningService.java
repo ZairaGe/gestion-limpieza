@@ -26,149 +26,254 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.itextpdf.layout.element.AreaBreak;
+import com.itextpdf.layout.properties.AreaBreakType;
+import com.mokeal.gestion.model.EstadoServicio;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.TreeMap;
+
 @Service
 public class PlanningService {
 
-    private final ServicioRepository servicioRepository;
-    private final EmpleadoRepository empleadoRepository;
+        private final ServicioRepository servicioRepository;
+        private final EmpleadoRepository empleadoRepository;
 
-    public PlanningService(ServicioRepository servicioRepository, EmpleadoRepository empleadoRepository) {
-        this.servicioRepository = servicioRepository;
-        this.empleadoRepository = empleadoRepository;
-    }
-
-    public byte[] generarPlanningDiario(Long empleadoId, LocalDate fecha) {
-        Empleado empleado = empleadoRepository.findById(empleadoId)
-                .orElseThrow(() -> new RuntimeException("Empleado no encontrado con id: " + empleadoId));
-
-        List<Servicio> servicios = servicioRepository.findByFecha(fecha).stream()
-                .filter(s -> s.getEmpleados().stream().anyMatch(e -> e.getId().equals(empleadoId)))
-                .sorted((a, b) -> a.getHoraInicio().compareTo(b.getHoraInicio()))
-                .collect(Collectors.toList());
-
-        ByteArrayOutputStream salida = new ByteArrayOutputStream();
-        try (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(salida))) {
-            Document documento = new Document(pdfDoc);
-
-            String fechaFormateada = fecha.getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("es", "ES"))
-                    + ", " + fecha.format(DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", new Locale("es", "ES")));
-
-            documento.add(new Paragraph("Planning de " + empleado.getNombre())
-                    .setFontSize(18).setBold());
-            documento.add(new Paragraph(fechaFormateada)
-                    .setFontSize(11).setFontColor(ColorConstants.GRAY).setMarginBottom(15));
-
-            if (servicios.isEmpty()) {
-                documento.add(new Paragraph("No hay servicios asignados para este día."));
-            } else {
-                double totalHorasDia = 0;
-
-                Table tabla = new Table(UnitValue.createPercentArray(new float[] { 18, 25, 42, 15 }))
-                        .useAllAvailableWidth();
-
-                tabla.addHeaderCell(celdaCabecera("Hora"));
-                tabla.addHeaderCell(celdaCabecera("Cliente"));
-                tabla.addHeaderCell(celdaCabecera("Dirección"));
-                tabla.addHeaderCell(celdaCabecera("Horas"));
-
-                for (Servicio servicio : servicios) {
-                    double horasServicio = calcularHorasPorEmpleado(servicio);
-                    totalHorasDia += horasServicio;
-
-                    tabla.addCell(new Cell().add(new Paragraph(
-                            servicio.getHoraInicio() + " - " + servicio.getHoraFin())));
-                    tabla.addCell(new Cell().add(new Paragraph(servicio.getCliente().getNombre())));
-                    tabla.addCell(new Cell().add(new Paragraph(servicio.getDireccion())));
-                    tabla.addCell(new Cell().add(new Paragraph(String.format("%.2fh", horasServicio))));
-                }
-
-                documento.add(tabla);
-                documento.add(new Paragraph("Total horas del día: " + String.format("%.2fh", totalHorasDia))
-                        .setBold().setMarginTop(10));
-            }
-
-            documento.close();
+        public PlanningService(ServicioRepository servicioRepository, EmpleadoRepository empleadoRepository) {
+                this.servicioRepository = servicioRepository;
+                this.empleadoRepository = empleadoRepository;
         }
 
-        return salida.toByteArray();
-    }
+        public byte[] generarPlanningDiario(Long empleadoId, LocalDate fecha) {
+                Empleado empleado = empleadoRepository.findById(empleadoId)
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Empleado no encontrado con id: " + empleadoId));
 
-    public byte[] generarPlanningGeneral(LocalDate desde, LocalDate hasta) {
-        List<Servicio> servicios = servicioRepository.findByFechaBetween(desde, hasta).stream()
-                .sorted((a, b) -> {
-                    int cmp = a.getFecha().compareTo(b.getFecha());
-                    return cmp != 0 ? cmp : a.getHoraInicio().compareTo(b.getHoraInicio());
-                })
-                .collect(Collectors.toList());
+                List<Servicio> servicios = servicioRepository.findByFecha(fecha).stream()
+                                .filter(s -> s.getEmpleados().stream().anyMatch(e -> e.getId().equals(empleadoId)))
+                                .sorted((a, b) -> a.getHoraInicio().compareTo(b.getHoraInicio()))
+                                .collect(Collectors.toList());
 
-        ByteArrayOutputStream salida = new ByteArrayOutputStream();
-        try (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(salida))) {
-            Document documento = new Document(pdfDoc);
+                ByteArrayOutputStream salida = new ByteArrayOutputStream();
+                try (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(salida))) {
+                        Document documento = new Document(pdfDoc);
 
-            documento.add(new Paragraph("Planning general").setFontSize(18).setBold());
-            documento.add(new Paragraph(desde + "  →  " + hasta)
-                    .setFontSize(11).setFontColor(ColorConstants.GRAY).setMarginBottom(15));
+                        String fechaFormateada = fecha.getDayOfWeek().getDisplayName(TextStyle.FULL,
+                                        new Locale("es", "ES"))
+                                        + ", " + fecha.format(DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy",
+                                                        new Locale("es", "ES")));
 
-            Map<LocalDate, List<Servicio>> porDia = servicios.stream()
-                    .collect(Collectors.groupingBy(Servicio::getFecha, LinkedHashMap::new, Collectors.toList()));
+                        documento.add(new Paragraph("Planning de " + empleado.getNombre())
+                                        .setFontSize(18).setBold());
+                        documento.add(new Paragraph(fechaFormateada)
+                                        .setFontSize(11).setFontColor(ColorConstants.GRAY).setMarginBottom(15));
 
-            if (porDia.isEmpty()) {
-                documento.add(new Paragraph("No hay servicios en este rango de fechas."));
-            }
+                        if (servicios.isEmpty()) {
+                                documento.add(new Paragraph("No hay servicios asignados para este día."));
+                        } else {
+                                double totalHorasDia = 0;
 
-            for (Map.Entry<LocalDate, List<Servicio>> entrada : porDia.entrySet()) {
-                LocalDate fecha = entrada.getKey();
-                String etiquetaDia = fecha.getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("es", "ES"))
-                        + ", " + fecha.format(DateTimeFormatter.ofPattern("d 'de' MMMM", new Locale("es", "ES")));
+                                Table tabla = new Table(UnitValue.createPercentArray(new float[] { 18, 25, 42, 15 }))
+                                                .useAllAvailableWidth();
 
-                documento.add(new Paragraph(etiquetaDia).setFontSize(13).setBold().setMarginTop(12));
+                                tabla.addHeaderCell(celdaCabecera("Hora"));
+                                tabla.addHeaderCell(celdaCabecera("Cliente"));
+                                tabla.addHeaderCell(celdaCabecera("Dirección"));
+                                tabla.addHeaderCell(celdaCabecera("Horas"));
 
-                Table tabla = new Table(UnitValue.createPercentArray(new float[] { 13, 20, 27, 25, 15 }))
-                        .useAllAvailableWidth();
-                tabla.addHeaderCell(celdaCabecera("Hora"));
-                tabla.addHeaderCell(celdaCabecera("Cliente"));
-                tabla.addHeaderCell(celdaCabecera("Dirección"));
-                tabla.addHeaderCell(celdaCabecera("Empleados"));
-                tabla.addHeaderCell(celdaCabecera("Horas/empleado"));
+                                for (Servicio servicio : servicios) {
+                                        double horasServicio = calcularHorasPorEmpleado(servicio);
+                                        totalHorasDia += horasServicio;
 
-                for (Servicio s : entrada.getValue()) {
-                    double horasCadaUno = calcularHorasPorEmpleado(s);
+                                        tabla.addCell(new Cell().add(new Paragraph(
+                                                        servicio.getHoraInicio() + " - " + servicio.getHoraFin())));
+                                        tabla.addCell(new Cell().add(new Paragraph(servicio.getCliente().getNombre())));
+                                        tabla.addCell(new Cell().add(new Paragraph(servicio.getDireccion())));
+                                        tabla.addCell(new Cell()
+                                                        .add(new Paragraph(String.format("%.2fh", horasServicio))));
+                                }
 
-                    tabla.addCell(new Cell().add(new Paragraph(s.getHoraInicio() + " - " + s.getHoraFin())));
-                    tabla.addCell(new Cell().add(new Paragraph(s.getCliente().getNombre())));
-                    tabla.addCell(new Cell().add(new Paragraph(s.getDireccion())));
+                                documento.add(tabla);
+                                documento.add(new Paragraph(
+                                                "Total horas del día: " + String.format("%.2fh", totalHorasDia))
+                                                .setBold().setMarginTop(10));
+                        }
 
-                    String nombresEmpleados = s.getEmpleados().isEmpty() ? "Sin asignar"
-                            : s.getEmpleados().stream().map(Empleado::getNombre).collect(Collectors.joining(", "));
-                    tabla.addCell(new Cell().add(new Paragraph(nombresEmpleados)));
-                    tabla.addCell(new Cell().add(new Paragraph(
-                            s.getEmpleados().isEmpty() ? "—" : String.format("%.2fh", horasCadaUno))));
+                        documento.close();
                 }
 
-                documento.add(new Paragraph(
-                        "Nota: cuando un servicio tiene varios empleados asignados, todos trabajan a la vez durante el horario indicado. "
-                                + "\"Horas/empleado\" es el tiempo de trabajo que se imputa a cada uno (duración total ÷ nº de empleados).")
-                        .setFontSize(8).setFontColor(ColorConstants.GRAY).setMarginTop(15));
-            }
-
-            documento.close();
+                return salida.toByteArray();
         }
 
-        return salida.toByteArray();
-    }
+        public byte[] generarPlanningGeneral(LocalDate desde, LocalDate hasta) {
+                List<Servicio> servicios = servicioRepository.findByFechaBetween(desde, hasta).stream()
+                                .sorted((a, b) -> {
+                                        int cmp = a.getFecha().compareTo(b.getFecha());
+                                        return cmp != 0 ? cmp : a.getHoraInicio().compareTo(b.getHoraInicio());
+                                })
+                                .collect(Collectors.toList());
 
-    private double calcularDuracionHoras(Servicio servicio) {
-        return (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;
-    }
+                ByteArrayOutputStream salida = new ByteArrayOutputStream();
+                try (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(salida))) {
+                        Document documento = new Document(pdfDoc);
 
-    private double calcularHorasPorEmpleado(Servicio servicio) {
-    return (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;
-}
+                        documento.add(new Paragraph("Planning general").setFontSize(18).setBold());
+                        documento.add(new Paragraph(desde + "  →  " + hasta)
+                                        .setFontSize(11).setFontColor(ColorConstants.GRAY).setMarginBottom(15));
 
-    private Cell celdaCabecera(String texto) {
-        return new Cell().add(new Paragraph(texto).setBold())
-                .setBackgroundColor(new DeviceRgb(20, 184, 166))
-                .setFontColor(ColorConstants.WHITE)
-                .setTextAlignment(TextAlignment.CENTER);
-    }
+                        Map<LocalDate, List<Servicio>> porDia = servicios.stream()
+                                        .collect(Collectors.groupingBy(Servicio::getFecha, LinkedHashMap::new,
+                                                        Collectors.toList()));
+
+                        if (porDia.isEmpty()) {
+                                documento.add(new Paragraph("No hay servicios en este rango de fechas."));
+                        }
+
+                        for (Map.Entry<LocalDate, List<Servicio>> entrada : porDia.entrySet()) {
+                                LocalDate fecha = entrada.getKey();
+                                String etiquetaDia = fecha.getDayOfWeek().getDisplayName(TextStyle.FULL,
+                                                new Locale("es", "ES"))
+                                                + ", " + fecha.format(DateTimeFormatter.ofPattern("d 'de' MMMM",
+                                                                new Locale("es", "ES")));
+
+                                documento.add(new Paragraph(etiquetaDia).setFontSize(13).setBold().setMarginTop(12));
+
+                                Table tabla = new Table(
+                                                UnitValue.createPercentArray(new float[] { 13, 20, 27, 25, 15 }))
+                                                .useAllAvailableWidth();
+                                tabla.addHeaderCell(celdaCabecera("Hora"));
+                                tabla.addHeaderCell(celdaCabecera("Cliente"));
+                                tabla.addHeaderCell(celdaCabecera("Dirección"));
+                                tabla.addHeaderCell(celdaCabecera("Empleados"));
+                                tabla.addHeaderCell(celdaCabecera("Horas/empleado"));
+
+                                for (Servicio s : entrada.getValue()) {
+                                        double horasCadaUno = calcularHorasPorEmpleado(s);
+
+                                        tabla.addCell(new Cell().add(
+                                                        new Paragraph(s.getHoraInicio() + " - " + s.getHoraFin())));
+                                        tabla.addCell(new Cell().add(new Paragraph(s.getCliente().getNombre())));
+                                        tabla.addCell(new Cell().add(new Paragraph(s.getDireccion())));
+
+                                        String nombresEmpleados = s.getEmpleados().isEmpty() ? "Sin asignar"
+                                                        : s.getEmpleados().stream().map(Empleado::getNombre)
+                                                                        .collect(Collectors.joining(", "));
+                                        tabla.addCell(new Cell().add(new Paragraph(nombresEmpleados)));
+                                        tabla.addCell(new Cell().add(new Paragraph(
+                                                        s.getEmpleados().isEmpty() ? "—"
+                                                                        : String.format("%.2fh", horasCadaUno))));
+                                }
+
+                                documento.add(new Paragraph(
+                                                "Nota: cuando un servicio tiene varios empleados asignados, todos trabajan a la vez durante el horario indicado. "
+                                                                + "\"Horas/empleado\" es el tiempo de trabajo que se imputa a cada uno (duración total ÷ nº de empleados).")
+                                                .setFontSize(8).setFontColor(ColorConstants.GRAY).setMarginTop(15));
+                        }
+
+                        documento.close();
+                }
+
+                return salida.toByteArray();
+        }
+
+        private double calcularDuracionHoras(Servicio servicio) {
+                return (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;
+        }
+
+        private double calcularHorasPorEmpleado(Servicio servicio) {
+                return (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;
+        }
+
+        private Cell celdaCabecera(String texto) {
+                return new Cell().add(new Paragraph(texto).setBold())
+                                .setBackgroundColor(new DeviceRgb(20, 184, 166))
+                                .setFontColor(ColorConstants.WHITE)
+                                .setTextAlignment(TextAlignment.CENTER);
+        }
+
+        public byte[] generarPlanningPorTrabajador(LocalDate desde, LocalDate hasta) {
+                List<Servicio> servicios = servicioRepository.findByFechaBetween(desde, hasta).stream()
+                                .filter(s -> s.getEstado() != EstadoServicio.CANCELADO)
+                                .collect(Collectors.toList());
+
+                Map<Long, Empleado> empleados = new HashMap<>();
+                Map<Long, List<Servicio>> porEmpleado = new HashMap<>();
+                for (Servicio s : servicios) {
+                        for (Empleado e : s.getEmpleados()) {
+                                empleados.putIfAbsent(e.getId(), e);
+                                porEmpleado.computeIfAbsent(e.getId(), k -> new ArrayList<>()).add(s);
+                        }
+                }
+
+                List<Long> ids = new ArrayList<>(porEmpleado.keySet());
+                ids.sort(Comparator.comparing(id -> empleados.get(id).getNombre()));
+
+                Locale es = Locale.forLanguageTag("es-ES");
+                ByteArrayOutputStream salida = new ByteArrayOutputStream();
+                try (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(salida))) {
+                        Document documento = new Document(pdfDoc);
+
+                        if (ids.isEmpty()) {
+                                documento.add(new Paragraph("No hay servicios asignados en este periodo."));
+                        }
+
+                        boolean primero = true;
+                        for (Long id : ids) {
+                                if (!primero)
+                                        documento.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
+                                primero = false;
+
+                                documento.add(new Paragraph("Planning de " + empleados.get(id).getNombre())
+                                                .setFontSize(18).setBold());
+                                String rango = desde.equals(hasta) ? desde.toString() : desde + "  →  " + hasta;
+                                documento.add(new Paragraph(rango)
+                                                .setFontSize(11).setFontColor(ColorConstants.GRAY).setMarginBottom(10));
+
+                                Map<LocalDate, List<Servicio>> porDia = porEmpleado.get(id).stream()
+                                                .sorted(Comparator.comparing(Servicio::getFecha)
+                                                                .thenComparing(Servicio::getHoraInicio))
+                                                .collect(Collectors.groupingBy(Servicio::getFecha, TreeMap::new,
+                                                                Collectors.toList()));
+
+                                double totalHoras = 0;
+                                for (Map.Entry<LocalDate, List<Servicio>> entrada : porDia.entrySet()) {
+                                        LocalDate fecha = entrada.getKey();
+                                        String etiqueta = fecha.getDayOfWeek().getDisplayName(TextStyle.FULL, es)
+                                                        + ", "
+                                                        + fecha.format(DateTimeFormatter.ofPattern("d 'de' MMMM", es));
+                                        documento.add(new Paragraph(etiqueta).setFontSize(13).setBold()
+                                                        .setMarginTop(12));
+
+                                        Table tabla = new Table(
+                                                        UnitValue.createPercentArray(new float[] { 20, 25, 40, 15 }))
+                                                        .useAllAvailableWidth();
+                                        tabla.addHeaderCell(celdaCabecera("Hora"));
+                                        tabla.addHeaderCell(celdaCabecera("Cliente"));
+                                        tabla.addHeaderCell(celdaCabecera("Dirección"));
+                                        tabla.addHeaderCell(celdaCabecera("Horas"));
+
+                                        for (Servicio s : entrada.getValue()) {
+                                                double horas = calcularHorasPorEmpleado(s);
+                                                totalHoras += horas;
+                                                tabla.addCell(new Cell().add(new Paragraph(
+                                                                s.getHoraInicio() + " - " + s.getHoraFin())));
+                                                tabla.addCell(new Cell()
+                                                                .add(new Paragraph(s.getCliente().getNombre())));
+                                                tabla.addCell(new Cell().add(new Paragraph(s.getDireccion())));
+                                                tabla.addCell(new Cell()
+                                                                .add(new Paragraph(String.format("%.2fh", horas))));
+                                        }
+                                        documento.add(tabla);
+                                }
+
+                                documento.add(new Paragraph("Total horas: " + String.format("%.2fh", totalHoras))
+                                                .setBold().setMarginTop(10));
+                        }
+
+                        documento.close();
+                }
+
+                return salida.toByteArray();
+        }
 }

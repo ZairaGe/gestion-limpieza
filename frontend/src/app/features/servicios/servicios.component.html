@@ -1,25 +1,38 @@
-<div class="page-header">
+<header class="page-header">
     <div>
         <h1>Servicios</h1>
-        <p>Gestiona los servicios programados.</p>
+        <p>Todos los servicios programados</p>
     </div>
-    <div class="header-acciones">
-        <button class="btn-secondary" (click)="abrirModalRecurrente()">Servicio recurrente</button>
-        <button class="btn-primary" (click)="abrirModalCrear()">+ Nuevo servicio</button>
-    </div>
-</div>
+    <button class="btn-primary" (click)="abrirModalCrear()">
+        <svg [lucideIcon]="IconPlus" [size]="18"></svg>
+        Nuevo servicio
+    </button>
+</header>
 
 @if (mensajeExito()) {
 <div class="mensaje-exito">{{ mensajeExito() }}</div>
 }
 
+<div class="filtros">
+    <input type="date" class="filtro-fecha" [ngModel]="filtroDesde()" (ngModelChange)="cambiarDesde($event)" />
+    <input type="date" class="filtro-fecha" [ngModel]="filtroHasta()" (ngModelChange)="cambiarHasta($event)" />
+
+    <div class="pills">
+        @for (op of opcionesFiltro; track op.valor) {
+        <button class="pill" [class.pill-activo]="filtroEstado() === op.valor" (click)="cambiarFiltroEstado(op.valor)">
+            {{ op.etiqueta }}
+        </button>
+        }
+    </div>
+</div>
+
 @if (cargando()) {
-<p class="loading">Cargando servicios...</p>
+<p class="estado-msg">Cargando servicios...</p>
 } @else if (error()) {
-<p class="error-message">{{ error() }}</p>
-} @else if (servicios().length === 0) {
-<div class="empty-state">
-    <p>Todavía no hay servicios programados.</p>
+<p class="estado-msg error">{{ error() }}</p>
+} @else if (serviciosFiltrados().length === 0) {
+<div class="table-card vacio-card">
+    <p>No hay servicios con estos filtros.</p>
 </div>
 } @else {
 <div class="table-card">
@@ -32,48 +45,56 @@
                 <th>Duración</th>
                 <th>Dirección</th>
                 <th>Empleados</th>
+                <th>Precio</th>
                 <th>Estado</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
-            @for (servicio of serviciosPaginados(); track servicio.id) {
+            @for (s of serviciosPaginados(); track s.id) {
             <tr>
-                <td>{{ servicio.clienteNombre }}</td>
-                <td>{{ servicio.fecha }}</td>
-                <td>{{ servicio.horaInicio }} - {{ servicio.horaFin }}</td>
-                <td>{{ servicio.duracionHoras | number: '1.1-2' }}h</td>
-                <td>{{ servicio.direccion }}</td>
                 <td>
-                    @if (servicio.empleados.length === 0) {
-                    <span class="badge chip-vacio">Sin asignar</span>
+                    <div class="cliente-nombre">{{ s.clienteNombre }}</div>
+                    <div class="cliente-sub">{{ etiquetaTipo(s) }}@if (s.recurrente) { · recurrente }</div>
+                </td>
+                <td>{{ formatearFecha(s.fecha) }}</td>
+                <td>{{ s.horaInicio.substring(0, 5) }}–{{ s.horaFin.substring(0, 5) }}</td>
+                <td>{{ duracionTexto(s) }}</td>
+                <td>{{ s.direccion }}</td>
+                <td>
+                    @if (s.empleados.length === 0) {
+                    <span class="sin-dato">—</span>
                     } @else {
-                    @for (emp of servicio.empleados; track emp.id) {
-                    <span class="empleado-chip"
-                        title="Horas de trabajo imputadas (el servicio dura {{ servicio.horaInicio }} - {{ servicio.horaFin }})">
-                        {{ emp.nombre }} ({{ emp.horasAsignadas | number: '1.1-2' }}h)
-                    </span>
+                    {{ nombresEmpleados(s) }}
                     }
-                    }
+                </td>
+                <td>{{ s.importe | number: '1.2-2' }} €</td>
+                <td>
+                    <div class="estado-wrap" [ngClass]="'estado-' + s.estado.toLowerCase()">
+                        <select [ngModel]="s.estado" (ngModelChange)="cambiarEstado(s, $event)">
+                            @for (e of estadosDisponibles; track e) {
+                            <option [value]="e">{{ estadoEtiquetas[e] }}</option>
+                            }
+                        </select>
+                        <svg class="estado-chevron" [lucideIcon]="IconChevron" [size]="14"></svg>
+                    </div>
                 </td>
                 <td>
-                    <select class="estado-select" [ngModel]="servicio.estado"
-                        (ngModelChange)="cambiarEstado(servicio, $event)">
-                        @for (estado of estadosDisponibles; track estado) {
-                        <option [value]="estado">{{ estado }}</option>
-                        }
-                    </select>
-                </td>
-                <td class="acciones">
-                    <button class="btn-icon" title="Editar" (click)="abrirModalEditar(servicio)">✎</button>
-                    <button class="btn-icon btn-danger" title="Eliminar"
-                        (click)="eliminarServicio(servicio.id!)">🗑</button>
+                    <div class="acciones">
+                        <button class="btn-icon" title="Editar" (click)="abrirModalEditar(s)">
+                            <svg [lucideIcon]="IconEditar" [size]="18"></svg>
+                        </button>
+                        <button class="btn-icon peligro" title="Eliminar" (click)="eliminarServicio(s.id!)">
+                            <svg [lucideIcon]="IconEliminar" [size]="18"></svg>
+                        </button>
+                    </div>
                 </td>
             </tr>
             }
         </tbody>
     </table>
 </div>
+
 <app-paginacion [paginaActual]="paginaActual()" [totalPaginas]="totalPaginas()"
     (cambioPagina)="cambiarPagina($event)"></app-paginacion>
 }
@@ -81,162 +102,142 @@
 @if (modalAbierto()) {
 <div class="modal-overlay" (click)="cerrarModal()">
     <div class="modal" (click)="$event.stopPropagation()">
-        <h2>{{ servicioEnEdicion ? 'Editar servicio' : 'Nuevo servicio' }}</h2>
+
+        <div class="modal-cabecera">
+            <h2>{{ servicioEnEdicion ? 'Editar servicio' : 'Nuevo servicio' }}</h2>
+            <button type="button" class="modal-cerrar" (click)="cerrarModal()" aria-label="Cerrar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                </svg>
+            </button>
+        </div>
 
         <form (ngSubmit)="guardarServicio()">
-            <div class="form-group">
-                <label>Cliente</label>
-                <select [(ngModel)]="formServicio.clienteId" name="clienteId" required>
-                    <option [ngValue]="0" disabled>Selecciona un cliente</option>
-                    @for (cliente of clientes(); track cliente.id) {
-                    <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
-                    }
-                </select>
+
+            <div class="fila fila-2">
+                <div class="campo">
+                    <label>Cliente</label>
+                    <select [ngModel]="formServicio.clienteId" (ngModelChange)="cambiarCliente($event)"
+                        name="clienteId">
+                        <option [ngValue]="0" disabled>Selecciona…</option>
+                        @for (cliente of clientes(); track cliente.id) {
+                        <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="campo">
+                    <label>Tipo / tarifa</label>
+                    <select [(ngModel)]="formServicio.tarifaId" name="tarifaId">
+                        <option [ngValue]="null">Sin tarifa</option>
+                        @for (tarifa of tarifas(); track tarifa.id) {
+                        <option [ngValue]="tarifa.id">{{ etiquetaTarifa(tarifa) }}</option>
+                        }
+                    </select>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Tarifa</label>
-                <select [(ngModel)]="formServicio.tarifaId" name="tarifaId" required>
-                    <option [ngValue]="0" disabled>Selecciona una tarifa</option>
-                    @for (tarifa of tarifas(); track tarifa.id) {
-                    <option [ngValue]="tarifa.id">
-                        {{ tarifa.tipoServicio }} — {{ tarifa.zona === 'MADRID' ? 'Madrid' : 'Fuera de Madrid' }}
-                    </option>
-                    }
-                </select>
+            <div class="fila fila-3">
+                <div class="campo">
+                    <label>{{ formServicio.recurrente ? 'Desde' : 'Fecha' }}</label>
+                    <input type="date" [(ngModel)]="formServicio.fecha" name="fecha" />
+                </div>
+                <div class="campo">
+                    <label>Empieza</label>
+                    <input type="time" [(ngModel)]="formServicio.horaInicio" name="horaInicio" />
+                </div>
+                <div class="campo">
+                    <label>Acaba</label>
+                    <input type="time" [(ngModel)]="formServicio.horaFin" name="horaFin" />
+                </div>
             </div>
 
-            <div class="form-group">
+            @if (duracionForm() > 0) {
+            <p class="hint-horario">
+                Duración: {{ duracionForm() | number: '1.0-2' }} h
+                @if (formServicio.empleadoIds.length > 1) {
+                · con {{ formServicio.empleadoIds.length }} empleados a la vez terminarán a las {{ horaFinReal() }}
+                }
+            </p>
+            }
+
+            <div class="campo">
                 <label>Dirección</label>
-                <input type="text" [(ngModel)]="formServicio.direccion" name="direccion" required />
+                <input type="text" [(ngModel)]="formServicio.direccion" name="direccion"
+                    placeholder="Calle, número, ciudad" />
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Fecha</label>
-                    <input type="date" [(ngModel)]="formServicio.fecha" name="fecha" required />
+            <div class="fila fila-2">
+                <div class="campo">
+                    <label>Precio (€)</label>
+                    <input type="number" step="0.01" min="0" [(ngModel)]="formServicio.precio" name="precio"
+                        placeholder="Según tarifa" />
                 </div>
-
-                <div class="form-group">
-                    <label>Hora inicio</label>
-                    <input type="time" [(ngModel)]="formServicio.horaInicio" name="horaInicio" required />
-                </div>
-
-                <div class="form-group">
-                    <label>Duración (horas)</label>
-                    <input type="number" step="0.25" min="0.25" [(ngModel)]="formServicio.duracionHoras"
-                        name="duracionHoras" required />
+                <div class="campo">
+                    <label>Estado</label>
+                    <select [(ngModel)]="formServicio.estado" name="estado">
+                        @for (e of estadosDisponibles; track e) {
+                        <option [value]="e">{{ estadoEtiquetas[e] }}</option>
+                        }
+                    </select>
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="campo">
                 <label>Empleados asignados</label>
-                <div class="checklist">
-                    @for (empleado of empleados(); track empleado.id) {
-                    <label class="checklist-item">
-                        <input type="checkbox" [checked]="empleadoSeleccionado(empleado.id!)"
-                            (change)="toggleEmpleado(empleado.id!)" />
-                        {{ empleado.nombre }}
-                    </label>
+                <div class="chips">
+                    @for (e of empleados(); track e.id) {
+                    @if (e.activo || empleadoSeleccionado(e.id!)) {
+                    <button type="button" class="chip-sel" [class.chip-sel-activo]="empleadoSeleccionado(e.id!)"
+                        (click)="toggleEmpleado(e.id!)">
+                        {{ e.nombre }}
+                    </button>
+                    }
                     }
                 </div>
             </div>
+
+            <div class="campo">
+                <label>Notas</label>
+                <input type="text" [(ngModel)]="formServicio.notas" name="notas" />
+            </div>
+
+            @if (!servicioEnEdicion) {
+            <div class="recurrente-box">
+                <label class="check-linea">
+                    <input type="checkbox" [ngModel]="formServicio.recurrente"
+                        (ngModelChange)="toggleRecurrente($event)" name="recurrente" />
+                    Servicio recurrente
+                </label>
+
+                @if (formServicio.recurrente) {
+                <div class="recurrente-detalle">
+                    <div class="dias">
+                        @for (d of diasModal; track d.valor) {
+                        <button type="button" class="dia-circulo"
+                            [class.dia-circulo-activo]="formServicio.diasSemana.includes(d.valor)" [title]="d.nombre"
+                            (click)="toggleDiaServicio(d.valor)">
+                            {{ d.letra }}
+                        </button>
+                        }
+                    </div>
+                    <div class="campo campo-hasta">
+                        <label>Hasta</label>
+                        <input type="date" [(ngModel)]="formServicio.repetirHasta" name="repetirHasta" />
+                    </div>
+                </div>
+                }
+            </div>
+            }
+
+            @if (errorModal()) {
+            <p class="error-modal">{{ errorModal() }}</p>
+            }
 
             <div class="modal-actions">
                 <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
                 <button type="submit" class="btn-primary">Guardar</button>
-            </div>
-        </form>
-    </div>
-</div>
-}
-
-@if (modalRecurrenteAbierto()) {
-<div class="modal-overlay" (click)="cerrarModalRecurrente()">
-    <div class="modal" (click)="$event.stopPropagation()">
-        <h2>Servicio recurrente</h2>
-        <p class="modal-subtitle">Genera automáticamente los servicios para varias semanas.</p>
-
-        <form (ngSubmit)="guardarRecurrente()">
-            <div class="form-group">
-                <label>Cliente</label>
-                <select [(ngModel)]="formRecurrente.clienteId" name="clienteIdRec" required>
-                    <option [ngValue]="0" disabled>Selecciona un cliente</option>
-                    @for (cliente of clientes(); track cliente.id) {
-                    <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
-                    }
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Tarifa</label>
-                <select [(ngModel)]="formRecurrente.tarifaId" name="tarifaIdRec" required>
-                    <option [ngValue]="0" disabled>Selecciona una tarifa</option>
-                    @for (tarifa of tarifas(); track tarifa.id) {
-                    <option [ngValue]="tarifa.id">
-                        {{ tarifa.tipoServicio }} — {{ tarifa.zona === 'MADRID' ? 'Madrid' : 'Fuera de Madrid' }}
-                    </option>
-                    }
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Dirección</label>
-                <input type="text" [(ngModel)]="formRecurrente.direccion" name="direccionRec" required />
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Hora inicio</label>
-                    <input type="time" [(ngModel)]="formRecurrente.horaInicio" name="horaInicioRec" required />
-                </div>
-                <div class="form-group">
-                    <label>Duración (horas)</label>
-                    <input type="number" step="0.25" min="0.25" [(ngModel)]="formRecurrente.duracionHoras"
-                        name="duracionRec" required />
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Días de la semana</label>
-                <div class="dias-selector">
-                    @for (dia of diasDisponibles; track dia.valor) {
-                    <button type="button" class="dia-boton"
-                        [class.dia-boton-activo]="formRecurrente.diasSemana.includes(dia.valor)"
-                        (click)="toggleDia(dia.valor)">
-                        {{ dia.etiqueta.substring(0, 3) }}
-                    </button>
-                    }
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Desde</label>
-                    <input type="date" [(ngModel)]="formRecurrente.fechaInicio" name="fechaInicioRec" required />
-                </div>
-                <div class="form-group">
-                    <label>Hasta</label>
-                    <input type="date" [(ngModel)]="formRecurrente.fechaFin" name="fechaFinRec" required />
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Empleados asignados</label>
-                <div class="checklist">
-                    @for (empleado of empleados(); track empleado.id) {
-                    <label class="checklist-item">
-                        <input type="checkbox" [checked]="formRecurrente.empleadoIds.includes(empleado.id!)"
-                            (change)="toggleEmpleadoRecurrente(empleado.id!)" />
-                        {{ empleado.nombre }}
-                    </label>
-                    }
-                </div>
-            </div>
-
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" (click)="cerrarModalRecurrente()">Cancelar</button>
-                <button type="submit" class="btn-primary">Generar servicios</button>
             </div>
         </form>
     </div>

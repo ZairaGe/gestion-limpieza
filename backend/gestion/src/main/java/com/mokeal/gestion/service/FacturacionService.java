@@ -124,7 +124,7 @@ public class FacturacionService {
         double duracion = servicio.getDuracionHoras() != null
                 ? servicio.getDuracionHoras()
                 : (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;
-        return tarifa.getPrecioHora().multiply(BigDecimal.valueOf(duracion));
+        return servicio.calcularImporte();
     }
 
     private String generarNumero() {

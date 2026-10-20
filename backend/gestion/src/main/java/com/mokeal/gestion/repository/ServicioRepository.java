@@ -10,6 +10,8 @@ import java.util.List;
 
 public interface ServicioRepository extends JpaRepository<Servicio, Long> {
 
+    List<Servicio> findByFechaBefore(LocalDate fecha);
+
     List<Servicio> findByFecha(LocalDate fecha);
 
     List<Servicio> findByEmpleados_Id(Long empleadoId);
@@ -17,6 +19,7 @@ public interface ServicioRepository extends JpaRepository<Servicio, Long> {
     long countByFecha(LocalDate fecha);
 
     List<Servicio> findByFechaBetween(LocalDate inicio, LocalDate fin);
+
     List<Servicio> findByClienteIdAndFechaBetween(Long clienteId, LocalDate desde, LocalDate hasta);
 
     List<Servicio> findByClienteIdAndFechaBetweenAndFacturaIsNull(Long clienteId, LocalDate desde, LocalDate hasta);
