@@ -29,8 +29,8 @@ public class TarifaService {
 
     public Tarifa actualizar(Long id, Tarifa datosNuevos) {
         Tarifa tarifa = buscarPorId(id);
-        tarifa.setTipoServicio(datosNuevos.getTipoServicio());
-        tarifa.setZona(datosNuevos.getZona());
+        tarifa.setNombre(datosNuevos.getNombre());
+        tarifa.setDescripcion(datosNuevos.getDescripcion());
         tarifa.setPrecioHora(datosNuevos.getPrecioHora());
         tarifa.setPrecioFijo(datosNuevos.getPrecioFijo());
         return tarifaRepository.save(tarifa);

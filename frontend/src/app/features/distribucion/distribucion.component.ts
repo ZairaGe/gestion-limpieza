@@ -169,12 +169,7 @@ export class DistribucionComponent implements OnInit {
   }
 
   etiquetaTipo(s: Servicio): string {
-    switch (s.tarifaTipoServicio) {
-      case 'CASA': return 'Limpieza de hogar';
-      case 'OFICINA': return 'Limpieza de oficina';
-      case 'EVENTO': return 'Limpieza de evento';
-      default: return 'Servicio de limpieza';
-    }
+    return s.tarifaNombre ?? 'Servicio de limpieza';
   }
 
   // ---------- Descargas ----------
@@ -236,6 +231,7 @@ export class DistribucionComponent implements OnInit {
     const request: ServicioRequest = {
       clienteId: s.clienteId,
       tarifaId: s.tarifaId,
+      tarifaNombre: s.tarifaNombre ?? null,
       direccion: s.direccion,
       fecha: s.fecha,
       horaInicio: s.horaInicio,

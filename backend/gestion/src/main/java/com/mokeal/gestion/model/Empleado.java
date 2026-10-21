@@ -19,6 +19,16 @@ public class Empleado {
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    @Column(length = 100)
+    private String apellido;
+
+    @Email(message = "El email no es válido")
+    @Column(length = 100)
+    private String email;
+
+    @Column(length = 255)
+    private String direccion;
+
     @Column(length = 20)
     private String telefono;
 

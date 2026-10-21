@@ -31,6 +31,7 @@ public class ServicioResponse {
     private String notas;
     private BigDecimal importe;
     private Double duracionHoras;
+    private String tarifaNombre;
     private Set<EmpleadoResumen> empleados;
 
     @Data

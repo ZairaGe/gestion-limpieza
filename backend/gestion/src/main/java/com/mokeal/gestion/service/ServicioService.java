@@ -198,9 +198,11 @@ public class ServicioService {
         servicio.setFecha(fecha);
         servicio.setPrecioManual(request.getPrecio());
         servicio.setNotas(request.getNotas() != null && !request.getNotas().isBlank()
-                ? request.getNotas().trim() : null);
+                ? request.getNotas().trim()
+                : null);
 
-        // La duración contratada no cambia; el horario real se acorta si trabajan varios a la vez
+        // La duración contratada no cambia; el horario real se acorta si trabajan
+        // varios a la vez
         double duracionTotal = request.getDuracionHoras();
         int numEmpleados = Math.max(1, empleados.size());
         long minutosReales = Math.round((duracionTotal / numEmpleados) * 60);
@@ -242,7 +244,8 @@ public class ServicioService {
     }
 
     private ServicioResponse convertir(Servicio servicio) {
-        double horasReales = (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;
+        double horasReales = (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay())
+                / 3600.0;
 
         Set<ServicioResponse.EmpleadoResumen> empleadosResumen = servicio.getEmpleados().stream()
                 .map(e -> ServicioResponse.EmpleadoResumen.builder()
@@ -259,8 +262,10 @@ public class ServicioService {
                 .clienteId(servicio.getCliente().getId())
                 .clienteNombre(servicio.getCliente().getNombre())
                 .tarifaId(tarifa != null ? tarifa.getId() : null)
-                .tarifaTipoServicio(tarifa != null ? tarifa.getTipoServicio().name() : null)
-                .tarifaZona(tarifa != null ? tarifa.getZona().name() : null)
+                .tarifaNombre(tarifa != null ? tarifa.getNombre() : null)
+                .tarifaTipoServicio(
+                        tarifa != null && tarifa.getTipoServicio() != null ? tarifa.getTipoServicio().name() : null)
+                .tarifaZona(tarifa != null && tarifa.getZona() != null ? tarifa.getZona().name() : null)
                 .direccion(servicio.getDireccion())
                 .fecha(servicio.getFecha())
                 .horaInicio(servicio.getHoraInicio())

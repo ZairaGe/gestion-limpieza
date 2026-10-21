@@ -190,13 +190,8 @@ export class ServiciosComponent implements OnInit {
   }
 
   etiquetaTipo(s: Servicio): string {
-    switch (s.tarifaTipoServicio) {
-      case 'CASA': return 'Limpieza de hogar';
-      case 'OFICINA': return 'Limpieza de oficina';
-      case 'EVENTO': return 'Limpieza de evento';
-      default: return 'Servicio de limpieza';
-    }
-  }
+  return s.tarifaNombre ?? 'Servicio de limpieza';
+}
 
   nombresEmpleados(s: Servicio): string {
     return s.empleados.map(e => e.nombre).join(', ');
@@ -301,10 +296,8 @@ export class ServiciosComponent implements OnInit {
   }
 
   etiquetaTarifa(t: Tarifa): string {
-    const tipos: Record<string, string> = { CASA: 'Hogar', OFICINA: 'Oficina', EVENTO: 'Evento' };
-    const zona = t.zona === 'MADRID' ? 'Madrid' : 'Fuera de Madrid';
-    return `${tipos[t.tipoServicio] ?? t.tipoServicio} · ${zona}`;
-  }
+  return t.nombre;
+}
 
   cerrarModal(): void {
     this.modalAbierto.set(false);
@@ -363,6 +356,7 @@ export class ServiciosComponent implements OnInit {
     const request: ServicioRequest = {
       clienteId: f.clienteId,
       tarifaId: f.tarifaId,
+      tarifaNombre: this.tarifas().find(t => t.id === f.tarifaId)?.nombre ?? null,
       direccion: f.direccion.trim(),
       fecha: f.fecha,
       horaInicio: f.horaInicio,

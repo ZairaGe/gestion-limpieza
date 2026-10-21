@@ -193,15 +193,10 @@ public class FacturaPdfService {
     }
 
     private String etiquetaTipoServicio(Servicio s) {
-        String tipo = s.getTarifa().getTipoServicio().name();
-        if (s.getTarifa() == null)
+        if (s.getTarifa() == null || s.getTarifa().getNombre() == null || s.getTarifa().getNombre().isBlank()) {
             return "Servicio de limpieza";
-        return switch (tipo) {
-            case "CASA" -> "Limpieza del hogar";
-            case "OFICINA" -> "Limpieza de oficina";
-            case "EVENTO" -> "Limpieza de evento";
-            default -> "Servicio de limpieza";
-        };
+        }
+        return s.getTarifa().getNombre();
     }
 
     private Cell celdaCabecera(String texto, TextAlignment alineacion) {

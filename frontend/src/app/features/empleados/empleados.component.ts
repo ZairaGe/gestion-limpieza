@@ -1,4 +1,5 @@
-import { Component, OnInit, signal } from '@angular/core';
+
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmpleadoService } from '../../core/services/empleado.service';
@@ -16,12 +17,31 @@ export class EmpleadosComponent implements OnInit {
   empleados = signal<Empleado[]>([]);
   cargando = signal(true);
   error = signal<string | null>(null);
+  busqueda = signal('');
+
+  empleadosFiltrados = computed(() => {
+    const texto = this.busqueda().trim().toLowerCase();
+
+    if (!texto) {
+      return this.empleados();
+    }
+
+    return this.empleados().filter(empleado =>
+      [
+        empleado.nombre,
+        empleado.telefono,
+        empleado.activo ? 'activo' : 'inactivo'
+      ].some(valor =>
+        String(valor ?? '').toLowerCase().includes(texto)
+      )
+    );
+  });
 
   modalAbierto = signal(false);
   empleadoEnEdicion: Empleado | null = null;
   formEmpleado: Empleado = this.empleadoVacio();
 
-  constructor(private empleadoService: EmpleadoService) {}
+  constructor(private empleadoService: EmpleadoService) { }
 
   ngOnInit(): void {
     this.cargarEmpleados();
@@ -33,6 +53,7 @@ export class EmpleadosComponent implements OnInit {
       next: (data) => {
         this.empleados.set(data);
         this.cargando.set(false);
+        this.error.set(null);
       },
       error: () => {
         this.error.set('No se pudieron cargar los empleados');
@@ -41,8 +62,16 @@ export class EmpleadosComponent implements OnInit {
     });
   }
 
+
   empleadoVacio(): Empleado {
-    return { nombre: '', telefono: '', activo: true };
+    return {
+      nombre: '',
+      apellido: '',
+      telefono: '',
+      email: '',
+      direccion: '',
+      activo: true
+    };
   }
 
   abrirModalCrear(): void {
@@ -63,7 +92,10 @@ export class EmpleadosComponent implements OnInit {
 
   guardarEmpleado(): void {
     if (this.empleadoEnEdicion) {
-      this.empleadoService.actualizar(this.empleadoEnEdicion.id!, this.formEmpleado).subscribe({
+      this.empleadoService.actualizar(
+        this.empleadoEnEdicion.id!,
+        this.formEmpleado
+      ).subscribe({
         next: () => {
           this.cerrarModal();
           this.cargarEmpleados();
@@ -82,7 +114,9 @@ export class EmpleadosComponent implements OnInit {
   }
 
   eliminarEmpleado(id: number): void {
-    if (!confirm('¿Seguro que quieres eliminar este empleado?')) return;
+    if (!confirm('¿Seguro que quieres eliminar este empleado?')) {
+      return;
+    }
 
     this.empleadoService.eliminar(id).subscribe({
       next: () => this.cargarEmpleados(),

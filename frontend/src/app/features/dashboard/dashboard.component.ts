@@ -19,10 +19,10 @@ import { DashboardService, DashboardResumen, DiaIngreso } from '../../core/servi
 })
 export class DashboardComponent implements OnInit {
 
-readonly IconEuro = LucideEuro;
-readonly IconCalendario = LucideCalendarDays;
-readonly IconActivos = LucideUserCheck;
-readonly IconSinServicio = LucideUserX;
+  readonly IconEuro = LucideEuro;
+  readonly IconCalendario = LucideCalendarDays;
+  readonly IconActivos = LucideUserCheck;
+  readonly IconSinServicio = LucideUserX;
 
   readonly etiquetasDias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
@@ -35,7 +35,7 @@ readonly IconSinServicio = LucideUserX;
     return Math.max(1, ...dias.map(d => d.previsto));
   });
 
-  constructor(private dashboardService: DashboardService) {}
+  constructor(private dashboardService: DashboardService) { }
 
   ngOnInit(): void {
     this.calcularRangoSemana();
@@ -52,13 +52,8 @@ readonly IconSinServicio = LucideUserX;
     return (dia.previsto / this.maxPrevisto()) * 100;
   }
 
-  etiquetaTipo(tipo: string): string {
-    switch (tipo) {
-      case 'CASA': return 'Limpieza del hogar';
-      case 'OFICINA': return 'Oficina';
-      case 'EVENTO': return 'Evento';
-      default: return 'Servicio';
-    }
+  etiquetaTipo(tipo: string | null | undefined): string {
+    return tipo || 'Servicio de limpieza';
   }
 
   private calcularRangoSemana(): void {

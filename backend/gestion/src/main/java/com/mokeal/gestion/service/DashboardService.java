@@ -66,7 +66,7 @@ public class DashboardService {
                 .map(s -> ServicioHoy.builder()
                         .id(s.getId())
                         .clienteNombre(s.getCliente().getNombre())
-                        .tipoServicio(s.getTarifa() != null ? s.getTarifa().getTipoServicio().name() : null)
+                        .tipoServicio(s.getTarifa() != null ? s.getTarifa().getNombre() : null)
                         .horaInicio(s.getHoraInicio())
                         .horaFin(s.getHoraFin())
                         .estado(s.getEstado().name())
