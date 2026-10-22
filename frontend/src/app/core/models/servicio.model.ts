@@ -28,6 +28,7 @@ export interface Servicio {
   pagado?: boolean;
   fechaPago?: string;
   importe?: number;
+  facturado?: boolean;
   recurrente?: boolean;
   precioManual?: number | null;
   notas?: string | null;

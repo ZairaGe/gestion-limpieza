@@ -280,6 +280,7 @@ public class ServicioService {
                 .importe(servicio.calcularImporte())
                 .recurrente(servicio.isRecurrente())
                 .precioManual(servicio.getPrecioManual())
+                .facturado(servicio.getFactura() != null)
                 .notas(servicio.getNotas())
                 .build();
     }
