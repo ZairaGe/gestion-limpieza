@@ -1,3 +1,4 @@
+
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -22,7 +23,11 @@ export class ClientesComponent implements OnInit {
   clienteEnEdicion: Cliente | null = null;
   formCliente: Cliente = this.clienteVacio();
 
-  constructor(private clienteService: ClienteService) { }
+  // Control de la ficha de consulta
+  fichaAbierta = signal(false);
+  clienteEnFicha: Cliente | null = null;
+
+  constructor(private clienteService: ClienteService) {}
 
   ngOnInit(): void {
     this.cargarClientes();
@@ -30,6 +35,7 @@ export class ClientesComponent implements OnInit {
 
   cargarClientes(): void {
     this.cargando.set(true);
+
     this.clienteService.listar().subscribe({
       next: (data) => {
         this.clientes.set(data);
@@ -43,27 +49,30 @@ export class ClientesComponent implements OnInit {
   }
 
   clienteVacio(): Cliente {
-    return { nombre: '', telefono: '', email: '', direccion: '', codigoPostal: '', tipo: 'PARTICULAR' as TipoCliente, nif: '' };
+    return {
+      nombre: '',
+      apellido: '',
+      telefono: '',
+      email: '',
+      direccion: '',
+      codigoPostal: '',
+      tipo: 'PARTICULAR' as TipoCliente,
+      nif: ''
+    };
   }
 
   abrirModalCrear(): void {
     this.clienteEnEdicion = null;
     this.formCliente = this.clienteVacio();
-    this.formCliente.apellido = '';
     this.modalAbierto.set(true);
   }
 
-
   abrirModalEditar(cliente: Cliente): void {
-    console.log('Cliente recibido:', cliente);
-
     this.clienteEnEdicion = cliente;
     this.formCliente = {
       ...cliente,
       apellido: cliente.apellido ?? ''
     };
-
-    console.log('Formulario de edición:', this.formCliente);
 
     this.modalAbierto.set(true);
   }
@@ -72,17 +81,23 @@ export class ClientesComponent implements OnInit {
     this.modalAbierto.set(false);
   }
 
+  abrirFicha(cliente: Cliente): void {
+    this.clienteEnFicha = cliente;
+    this.fichaAbierta.set(true);
+  }
+
+  cerrarFicha(): void {
+    this.fichaAbierta.set(false);
+    this.clienteEnFicha = null;
+  }
 
   guardarCliente(): void {
-    console.log('Datos que voy a guardar:', this.formCliente);
-
     if (this.clienteEnEdicion) {
       this.clienteService.actualizar(
         this.clienteEnEdicion.id!,
         this.formCliente
       ).subscribe({
         next: () => {
-          console.log('Cliente actualizado correctamente');
           this.cerrarModal();
           this.cargarClientes();
         },
@@ -127,7 +142,10 @@ export class ClientesComponent implements OnInit {
         cliente.apellido,
         cliente.telefono,
         cliente.email,
-        cliente.direccion
+        cliente.direccion,
+        cliente.codigoPostal,
+        cliente.nif,
+        cliente.tipo
       ].some(valor =>
         String(valor ?? '').toLowerCase().includes(texto)
       )
