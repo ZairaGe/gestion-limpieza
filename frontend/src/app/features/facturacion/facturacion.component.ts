@@ -114,6 +114,11 @@ export class FacturacionComponent implements OnInit {
     });
   }
 
+  private conceptoFactura(s: Servicio): string {
+    const d = this.aFecha(s.fecha);
+    return `${this.nombreServicio(s)} · ${this.diaMes(d)} ${d.getFullYear()}`;
+  }
+
   crearFactura(s: Servicio): void {
     if (!s.pagado || s.facturado || this.procesando() !== null) return;
 
@@ -127,7 +132,7 @@ export class FacturacionComponent implements OnInit {
     this.facturacionService.generar({
       clienteId: s.clienteId,
       servicioIds: [s.id!],
-      concepto: s.tarifaNombre ?? 'Servicios de limpieza',
+      concepto: this.conceptoFactura(s),
       fechaEmision: this.hoy()
     }).subscribe({
       next: (resultado) => {

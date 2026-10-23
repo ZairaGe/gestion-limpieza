@@ -1,156 +1,196 @@
-<div class="page-header">
+<header class="page-header">
   <div>
     <h1>Facturas</h1>
-    <p>Genera y consulta las facturas emitidas.</p>
+    <p>Crea y descarga facturas</p>
   </div>
-  <button class="btn-primary" (click)="toggleGeneracion()">
-    {{ mostrarGeneracion() ? 'Cancelar' : '+ Generar factura' }}
+  <button class="btn-primary" (click)="abrirModal()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14" />
+      <path d="M12 5v14" />
+    </svg>
+    Nueva factura
   </button>
-</div>
+</header>
 
 @if (mensajeExito()) {
 <div class="mensaje-exito">{{ mensajeExito() }}</div>
 }
+
 @if (error()) {
-<p class="error-message">{{ error() }}</p>
+<p class="error-msg">{{ error() }}</p>
 }
-
-@if (mostrarGeneracion()) {
-<div class="panel-generacion">
-  <div class="filtro-linea">
-    <div class="form-group">
-      <label>Cliente</label>
-      <select [(ngModel)]="clienteIdGen">
-        <option [ngValue]="0" disabled>Selecciona un cliente</option>
-        @for (cliente of clientes(); track cliente.id) {
-        <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
-        }
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Desde</label>
-      <input type="date" [(ngModel)]="desdeGen" />
-    </div>
-    <div class="form-group">
-      <label>Hasta</label>
-      <input type="date" [(ngModel)]="hastaGen" />
-    </div>
-    <button class="btn-secondary" (click)="buscarPendientes()">Buscar</button>
-  </div>
-
-  @if (buscandoPendientes()) {
-  <p class="loading">Buscando servicios...</p>
-  } @else if (serviciosPendientes().length > 0) {
-  <div class="table-card compacta">
-    <table>
-      <thead>
-        <tr>
-          <th></th>
-          <th>Fecha</th>
-          <th>Horario</th>
-          <th>Dirección</th>
-          <th>Importe</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (s of serviciosPendientes(); track s.id) {
-        <tr>
-          <td><input type="checkbox" [checked]="estaSeleccionado(s.id)" (change)="toggleSeleccion(s.id)" /></td>
-          <td>{{ s.fecha }}</td>
-          <td>{{ s.horaInicio }} - {{ s.horaFin }}</td>
-          <td>{{ s.direccion }}</td>
-          <td>{{ s.importe | number: '1.2-2' }} €</td>
-        </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-
-  <div class="resumen-generar">
-    <div class="desglose">
-      <div>Subtotal: <strong>{{ subtotalPreview() | number: '1.2-2' }} €</strong></div>
-      <div class="form-group descuento-input">
-        <label>Descuento (%)</label>
-        <input type="number" min="0" max="100" step="1" [(ngModel)]="descuentoPorcentaje" />
-      </div>
-      @if (descuentoPorcentaje > 0) {
-      <div class="linea-descuento">Descuento: -{{ descuentoPreview() | number: '1.2-2' }} €</div>
-      }
-      <div>IVA (21%): {{ ivaPreview() | number: '1.2-2' }} €</div>
-      <div class="total-final">Total: <strong>{{ totalPreview() | number: '1.2-2' }} €</strong></div>
-    </div>
-
-    <div class="form-group">
-      <label>Concepto</label>
-      <input type="text" [(ngModel)]="concepto" placeholder="Servicios de limpieza" />
-    </div>
-    <div class="form-group">
-      <label>Fecha de emisión</label>
-      <input type="date" [(ngModel)]="fechaEmision" />
-    </div>
-    <button class="btn-primary" [disabled]="generando()" (click)="generarFactura()">
-      {{ generando() ? 'Generando...' : 'Generar factura' }}
-    </button>
-  </div>
-  } @else if (desdeGen && hastaGen) {
-  <p class="empty-mini">No hay servicios sin facturar para este cliente en ese rango.</p>
-  }
-</div>
-}
-
-<div class="form-group filtro-cliente">
-  <label>Filtrar por cliente</label>
-  <select [(ngModel)]="filtroClienteId" (ngModelChange)="cargarFacturas()">
-    <option [ngValue]="0">Todos los clientes</option>
-    @for (cliente of clientes(); track cliente.id) {
-    <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
-    }
-  </select>
-</div>
 
 @if (cargando()) {
-<p class="loading">Cargando facturas...</p>
+<p class="estado-msg">Cargando facturas...</p>
 } @else if (facturas().length === 0) {
-<div class="empty-state">
-  <p>No hay facturas para este filtro.</p>
+<div class="table-card vacio-card">
+  <p>Todavía no hay facturas. Crea la primera con "Nueva factura".</p>
 </div>
 } @else {
 <div class="table-card">
   <table>
     <thead>
       <tr>
-        <th>Número</th>
+        <th>Nº</th>
+        <th>Fecha</th>
         <th>Cliente</th>
-        <th>Servicios</th>
-        <th>Importe</th>
-        <th>Fecha emisión</th>
-        <th>Estado</th>
+        <th>Concepto</th>
+        <th>Total (IVA incl.)</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
-      @for (factura of facturas(); track factura.id) {
+      @for (f of paginadas(); track f.id) {
       <tr>
-        <td>{{ factura.numero }}</td>
-        <td>{{ factura.clienteNombre }}</td>
-        <td>{{ factura.cantidadServicios }}</td>
-        <td>{{ factura.importe | number: '1.2-2' }} €</td>
-        <td>{{ factura.fechaEmision }}</td>
+        <td>{{ f.numero }}</td>
+        <td>{{ fechaCorta(f.fechaEmision) }}</td>
+        <td>{{ f.clienteNombre }}</td>
+        <td>{{ conceptoTexto(f) }}</td>
+        <td>{{ f.importe | number: '1.2-2' }} €</td>
         <td>
-          <span class="badge" [class.badge-empresa]="factura.estado === 'PAGADA'">
-            {{ factura.estado }}
-          </span>
-        </td>
-        <td class="acciones">
-          <button class="btn-icon" title="Descargar PDF" (click)="descargarPdf(factura)">⬇</button>
-          @if (factura.estado === 'PENDIENTE') {
-          <button class="btn-icon" title="Marcar como pagada" (click)="marcarComoPagada(factura.id!)">✓</button>
-          }
-          <button class="btn-icon btn-danger" title="Eliminar" (click)="eliminarFactura(factura.id!)">🗑</button>
+          <div class="acciones">
+            <button class="btn-pdf" (click)="descargarPdf(f)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" x2="12" y1="15" y2="3" />
+              </svg>
+              PDF
+            </button>
+            <button class="btn-icon peligro" title="Eliminar" (click)="eliminar(f)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                <line x1="10" x2="10" y1="11" y2="17" />
+                <line x1="14" x2="14" y1="11" y2="17" />
+              </svg>
+            </button>
+          </div>
         </td>
       </tr>
       }
     </tbody>
   </table>
+</div>
+
+<app-paginacion [paginaActual]="paginaEfectiva()" [totalPaginas]="totalPaginas()"
+  (cambioPagina)="cambiarPagina($event)"></app-paginacion>
+}
+
+@if (modalAbierto()) {
+<div class="modal-overlay" (click)="cerrarModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-cabecera">
+      <h2>Nueva factura</h2>
+      <button type="button" class="modal-cerrar" (click)="cerrarModal()" aria-label="Cerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="fila fila-3">
+      <div class="campo">
+        <label>Cliente</label>
+        <select [ngModel]="clienteId()" (ngModelChange)="cambiarCliente($event)">
+          <option [ngValue]="0" disabled>Selecciona…</option>
+          @for (c of clientes(); track c.id) {
+          <option [ngValue]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label>Desde</label>
+        <input type="date" [ngModel]="desde()" (ngModelChange)="cambiarDesde($event)" />
+      </div>
+      <div class="campo">
+        <label>Hasta</label>
+        <input type="date" [ngModel]="hasta()" (ngModelChange)="cambiarHasta($event)" />
+      </div>
+    </div>
+
+    @if (buscando()) {
+    <p class="hint">Buscando servicios...</p>
+    } @else if (buscado() && pendientes().length === 0) {
+    <p class="hint">Este cliente no tiene servicios sin facturar en esas fechas.</p>
+    } @else if (pendientes().length > 0) {
+
+    <div class="servicios-box">
+      <table class="tabla-mini">
+        <thead>
+          <tr>
+            <th class="col-check">
+              <input type="checkbox" [checked]="todosSeleccionados()" (change)="toggleTodos()" title="Marcar todos" />
+            </th>
+            <th>Fecha</th>
+            <th>Horario</th>
+            <th>Dirección</th>
+            <th class="col-importe">Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of pendientes(); track s.id) {
+          <tr>
+            <td class="col-check">
+              <input type="checkbox" [checked]="seleccionados().has(s.id)" (change)="toggleServicio(s.id)" />
+            </td>
+            <td>{{ fechaCorta(s.fecha) }}</td>
+            <td>{{ s.horaInicio.substring(0, 5) }}–{{ s.horaFin.substring(0, 5) }}</td>
+            <td class="col-dir">{{ s.direccion }}</td>
+            <td class="col-importe">{{ s.importe | number: '1.2-2' }} €</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="campo">
+      <label>Concepto</label>
+      <input type="text" [ngModel]="concepto()" (ngModelChange)="concepto.set($event)"
+        placeholder="Servicios de limpieza" />
+    </div>
+
+    <div class="fila fila-2">
+      <div class="campo">
+        <label>Descuento (%)</label>
+        <input type="number" min="0" max="100" step="1" [ngModel]="descuento()"
+          (ngModelChange)="descuento.set($event ?? 0)" />
+      </div>
+      <div class="campo">
+        <label>Fecha de emisión</label>
+        <input type="date" [ngModel]="fechaEmision()" (ngModelChange)="fechaEmision.set($event)" />
+      </div>
+    </div>
+
+    <div class="desglose">
+      <div class="linea"><span>Subtotal</span><span>{{ subtotal() | number: '1.2-2' }} €</span></div>
+      @if (descuentoPct() > 0) {
+      <div class="linea descuento"><span>Descuento ({{ descuentoPct() }}%)</span><span>-{{ descuentoImporte() | number:
+          '1.2-2' }} €</span></div>
+      }
+      <div class="linea"><span>IVA (21%)</span><span>{{ iva() | number: '1.2-2' }} €</span></div>
+      <div class="linea total"><span>Total</span><span>{{ total() | number: '1.2-2' }} €</span></div>
+    </div>
+    }
+
+    @if (errorModal()) {
+    <p class="error-modal">{{ errorModal() }}</p>
+    }
+
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn-primary btn-guardar" [disabled]="generando() || seleccionados().size === 0"
+        (click)="generar()">
+        {{ generando() ? 'Creando...' : 'Crear factura' }}
+      </button>
+    </div>
+  </div>
 </div>
 }
