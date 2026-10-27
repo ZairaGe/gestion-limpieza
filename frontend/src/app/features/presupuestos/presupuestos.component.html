@@ -1,295 +1,219 @@
-```html
-<div class="page-header">
+<header class="page-header">
   <div>
     <h1>Presupuestos</h1>
-    <p>Crea y gestiona presupuestos para tus clientes.</p>
+    <p>Prepara presupuestos para tus clientes</p>
   </div>
-  <button class="btn-primary" (click)="abrirModalCrear()">+ Nuevo presupuesto</button>
-</div>
+  <button class="btn-primary" (click)="abrirModal()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14" />
+      <path d="M12 5v14" />
+    </svg>
+    Nuevo presupuesto
+  </button>
+</header>
 
 @if (mensajeExito()) {
-  <div class="mensaje-exito">{{ mensajeExito() }}</div>
+<div class="mensaje-exito">{{ mensajeExito() }}</div>
 }
 
 @if (error()) {
-  <p class="error-message">{{ error() }}</p>
+<p class="error-msg">{{ error() }}</p>
 }
 
 @if (cargando()) {
-  <p class="loading">Cargando presupuestos...</p>
+<p class="estado-msg">Cargando presupuestos...</p>
 } @else if (presupuestos().length === 0) {
-  <div class="empty-state">
-    <p>Todavía no hay presupuestos creados.</p>
-  </div>
+<div class="table-card vacio-card">
+  <p>Todavía no hay presupuestos. Crea el primero con "Nuevo presupuesto".</p>
+</div>
 } @else {
-  <div class="table-card">
-    <table>
-      <thead>
-        <tr>
-          <th>Número</th>
-          <th>Cliente</th>
-          <th>Conceptos</th>
-          <th>Total</th>
-          <th>Fecha</th>
-          <th>Estado</th>
-          <th></th>
-        </tr>
-      </thead>
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Nº Presupuesto</th>
+        <th>Fecha</th>
+        <th>Cliente</th>
+        <th>Concepto</th>
+        <th>Total (IVA incl.)</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (p of paginados(); track p.id) {
+      <tr>
+        <td>{{ p.numero }}</td>
+        <td>{{ fechaCorta(p.fechaEmision) }}</td>
+        <td>{{ p.nombre || '—' }}</td>
+        <td>{{ conceptoTexto(p) }}</td>
+        <td>{{ p.total | number: '1.2-2' }} €</td>
+        <td>
+          <div class="acciones">
+            <button class="btn-pdf" (click)="descargarPdf(p)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" x2="12" y1="15" y2="3" />
+              </svg>
+              PDF
+            </button>
+            <button type="button" class="btn-icon" title="Editar presupuesto" (click)="editar(p)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z" />
+              </svg>
+            </button>
+            <button class="btn-icon peligro" title="Eliminar" (click)="eliminar(p)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                <line x1="10" x2="10" y1="11" y2="17" />
+                <line x1="14" x2="14" y1="11" y2="17" />
+              </svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</div>
 
-      <tbody>
-        @for (p of presupuestos(); track p.id) {
-          <tr>
-            <td>{{ p.numero }}</td>
-            <td>{{ p.clienteNombre }}</td>
-            <td>{{ p.lineas.length }} línea(s)</td>
-            <td>{{ p.total | number: '1.2-2' }} €</td>
-            <td>{{ p.fechaEmision }}</td>
-
-            <td>
-              <select
-                class="estado-select"
-                [ngModel]="p.estado"
-                (ngModelChange)="cambiarEstado(p, $event)"
-              >
-                @for (estado of estadosDisponibles; track estado) {
-                  <option [value]="estado">{{ estado }}</option>
-                }
-              </select>
-            </td>
-
-            <td class="acciones">
-              <button
-                class="btn-icon"
-                title="Descargar PDF"
-                (click)="descargarPdf(p)"
-              >
-                ⬇
-              </button>
-
-              <button
-                class="btn-icon btn-danger"
-                title="Eliminar"
-                (click)="eliminarPresupuesto(p.id!)"
-              >
-                🗑
-              </button>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+<app-paginacion [paginaActual]="paginaEfectiva()" [totalPaginas]="totalPaginas()"
+  (cambioPagina)="cambiarPagina($event)"></app-paginacion>
 }
-
 
 @if (modalAbierto()) {
-  <div class="modal-overlay" (click)="cerrarModal()">
+<div class="modal-overlay" (click)="cerrarModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
 
-    <div class="modal" (click)="$event.stopPropagation()">
-
-      <h2>Nuevo presupuesto</h2>
-
-      <form (ngSubmit)="guardarPresupuesto()">
-
-        <!-- CLIENTE -->
-        <div class="form-group">
-          <label>Cliente</label>
-
-          <select
-            [(ngModel)]="formPresupuesto.clienteId"
-            name="clienteId"
-            required
-          >
-            <option [ngValue]="0" disabled>
-              Selecciona un cliente
-            </option>
-
-            @for (cliente of clientes(); track cliente.id) {
-              <option [ngValue]="cliente.id">
-                {{ cliente.nombre }}
-              </option>
-            }
-          </select>
-        </div>
-
-
-        <!-- LÍNEAS DEL PRESUPUESTO -->
-        <div class="form-group">
-
-          <label>Líneas del presupuesto</label>
-
-          <div class="lineas-lista">
-
-            @for (linea of formPresupuesto.lineas; track $index) {
-
-              <div class="linea-item">
-
-                <!-- CONCEPTO -->
-                <div class="campo-linea concepto">
-                  <label>Concepto</label>
-
-                  <input
-                    type="text"
-                    [(ngModel)]="linea.concepto"
-                    [name]="'concepto' + $index"
-                    placeholder="Ej: Limpieza hogar (lunes)"
-                    required
-                  />
-                </div>
-
-
-                <!-- HORAS -->
-                <div class="campo-linea">
-                  <label>Horas</label>
-
-                  <input
-                    type="number"
-                    step="0.25"
-                    min="0.25"
-                    [(ngModel)]="linea.horas"
-                    [name]="'horas' + $index"
-                    placeholder="Horas"
-                    required
-                  />
-                </div>
-
-
-                <!-- PRECIO POR HORA -->
-                <div class="campo-linea">
-                  <label>Precio/hora</label>
-
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    [(ngModel)]="linea.precioHora"
-                    [name]="'precio' + $index"
-                    placeholder="€/hora"
-                    required
-                  />
-                </div>
-
-
-                <!-- SUBTOTAL -->
-                <div class="linea-subtotal">
-                  {{ subtotalLinea(linea) | number: '1.2-2' }} €
-                </div>
-
-
-                <!-- ELIMINAR LÍNEA -->
-                <button
-                  type="button"
-                  class="btn-icon btn-danger"
-                  (click)="quitarLinea($index)"
-                  title="Eliminar línea"
-                >
-                  🗑
-                </button>
-
-              </div>
-            }
-
-          </div>
-
-
-          <!-- AÑADIR LÍNEA -->
-          <button
-            type="button"
-            class="btn-secondary btn-add-linea"
-            (click)="agregarLinea()"
-          >
-            + Añadir línea
-          </button>
-
-        </div>
-
-
-        <!-- FECHA -->
-        <div class="form-group">
-
-          <label>Fecha de emisión</label>
-
-          <input
-            type="date"
-            [(ngModel)]="formPresupuesto.fechaEmision"
-            name="fechaEmision"
-            required
-          />
-
-        </div>
-
-
-        <!-- DESCUENTO -->
-        <div class="form-group">
-
-          <label>Descuento (%)</label>
-
-          <input
-            type="number"
-            [(ngModel)]="formPresupuesto.descuentoPorcentaje"
-            name="descuentoPorcentaje"
-            min="0"
-            max="100"
-            step="0.01"
-            placeholder="Ej: 10"
-          />
-
-        </div>
-
-
-        <!-- DESGLOSE DEL PRESUPUESTO -->
-        <div class="desglose-modal">
-
-          <div>
-            Subtotal:
-            <strong>
-              {{ subtotalPreview() | number: '1.2-2' }} €
-            </strong>
-          </div>
-
-          @if (formPresupuesto.descuentoPorcentaje > 0) {
-
-            <div class="linea-descuento">
-              Descuento ({{ formPresupuesto.descuentoPorcentaje }}%):
-              -{{ descuentoPreview() | number: '1.2-2' }} €
-            </div>
-
-          }
-
-          <div class="total-final">
-            Total:
-            <strong>
-              {{ totalPreview() | number: '1.2-2' }} €
-            </strong>
-          </div>
-
-        </div>
-
-
-        <!-- BOTONES -->
-        <div class="modal-actions">
-
-          <button
-            type="button"
-            class="btn-secondary"
-            (click)="cerrarModal()"
-          >
-            Cancelar
-          </button>
-
-          <button
-            type="submit"
-            class="btn-primary"
-          >
-            Guardar
-          </button>
-
-        </div>
-
-      </form>
-
+    <div class="modal-cabecera">
+      <h2>{{ presupuestoEditando() ? 'Editar presupuesto' : 'Nuevo presupuesto' }}</h2>
+      <button type="button" class="modal-cerrar" (click)="cerrarModal()" aria-label="Cerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
     </div>
 
+    <div class="fila fila-2">
+      <div class="campo">
+        <label>Nombre</label>
+        <input type="text" [(ngModel)]="form.nombre" [ngModelOptions]="{ standalone: true }" />
+      </div>
+      <div class="campo">
+        <label>Teléfono</label>
+        <input type="tel" [(ngModel)]="form.telefono" [ngModelOptions]="{ standalone: true }" />
+      </div>
+    </div>
+
+    <div class="fila fila-2">
+      <div class="campo">
+        <label>Correo</label>
+        <input type="email" [(ngModel)]="form.correo" [ngModelOptions]="{ standalone: true }" />
+      </div>
+      <div class="campo">
+        <label>Dirección</label>
+        <input type="text" [(ngModel)]="form.direccion" [ngModelOptions]="{ standalone: true }" />
+      </div>
+    </div>
+
+    <div class="campo campo-conceptos">
+      <label>Conceptos</label>
+
+      <div class="lineas">
+        @for (l of lineas; track l) {
+        <div class="linea">
+          <input type="text" [(ngModel)]="l.concepto" [ngModelOptions]="{ standalone: true }" placeholder="Concepto" />
+          <select class="sel-tarifa" title="Rellenar desde una tarifa" (change)="elegirTarifa(l, $event)">
+            <option value=""></option>
+            @for (t of tarifas(); track t.id) {
+            <option [value]="t.id">{{ etiquetaTarifa(t) }}</option>
+            }
+          </select>
+          <input type="number" min="0" step="0.25" [(ngModel)]="l.horas" [ngModelOptions]="{ standalone: true }"
+            placeholder="1" />
+          <input type="number" min="0" step="0.01" [(ngModel)]="l.precioHora" [ngModelOptions]="{ standalone: true }"
+            placeholder="Precio" />
+          <button type="button" class="btn-quitar" title="Quitar línea" (click)="quitarLinea(l)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+        }
+      </div>
+
+      <button type="button" class="btn-add" [disabled]="lineas.length >= maxLineas" (click)="agregarLinea()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14" />
+          <path d="M12 5v14" />
+        </svg>
+        Añadir línea
+      </button>
+    </div>
+
+    <div class="fila fila-2">
+      <div class="campo">
+        <label>Notas</label>
+        <input type="text" [(ngModel)]="form.notas" [ngModelOptions]="{ standalone: true }" />
+      </div>
+      <div class="campo">
+        <label>IVA (%)</label>
+        <input type="number" min="0" max="100" step="1" [(ngModel)]="form.iva"
+          [ngModelOptions]="{ standalone: true }" />
+      </div>
+    </div>
+
+    <div class="fila fila-2">
+      <div class="campo">
+        <label>Descuento (%)</label>
+        <input type="number" min="0" max="100" step="1" [(ngModel)]="form.descuento"
+          [ngModelOptions]="{ standalone: true }" />
+      </div>
+      <div class="campo">
+        <label>Fecha de emisión</label>
+        <input type="date" [(ngModel)]="form.fecha" [ngModelOptions]="{ standalone: true }" />
+      </div>
+    </div>
+
+    <div class="desglose">
+      <div class="linea-total"><span>Subtotal</span><span>{{ subtotal() | number: '1.2-2' }} €</span></div>
+      @if (descuentoPct() > 0) {
+      <div class="linea-total descuento"><span>Descuento ({{ descuentoPct() }}%)</span><span>-{{ descuentoImporte() |
+          number: '1.2-2' }} €</span></div>
+      }
+      <div class="linea-total"><span>IVA ({{ ivaPct() }}%)</span><span>{{ ivaImporte() | number: '1.2-2' }} €</span>
+      </div>
+      <div class="linea-total total"><span>Total</span><span>{{ total() | number: '1.2-2' }} €</span></div>
+    </div>
+
+    @if (errorModal()) {
+    <p class="error-modal">{{ errorModal() }}</p>
+    }
+
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn-primary btn-guardar" [disabled]="guardando()" (click)="guardar()">
+        {{
+        guardando()
+        ? 'Guardando...'
+        : presupuestoEditando()
+        ? 'Guardar cambios'
+        : 'Crear presupuesto'
+        }}
+      </button>
+    </div>
   </div>
+</div>
 }
-```

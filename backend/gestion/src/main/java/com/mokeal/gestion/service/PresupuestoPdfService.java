@@ -1,24 +1,36 @@
 package com.mokeal.gestion.service;
 
-import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.io.font.FontProgramFactory;
+import com.itextpdf.io.font.PdfEncodings;
+import com.itextpdf.io.font.constants.StandardFonts;
+import com.itextpdf.io.image.ImageData;
+import com.itextpdf.io.image.ImageDataFactory;
+import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.borders.Border;
-import com.itextpdf.layout.borders.SolidBorder;
-import com.itextpdf.layout.element.*;
-import com.itextpdf.layout.properties.TextAlignment;
-import com.itextpdf.layout.properties.UnitValue;
-import com.itextpdf.layout.properties.VerticalAlignment;
+import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
+import com.mokeal.gestion.model.LineaPresupuesto;
 import com.mokeal.gestion.model.Presupuesto;
 import com.mokeal.gestion.repository.PresupuestoRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.NumberFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 @Service
 public class PresupuestoPdfService {
@@ -35,13 +47,28 @@ public class PresupuestoPdfService {
     private String empresaTelefono;
     @Value("${mokeal.empresa.email:}")
     private String empresaEmail;
+    @Value("${mokeal.empresa.cuentaBancaria:}")
+    private String cuentaBancaria;
 
-    private static final DeviceRgb AZUL_PRIMARIO = new DeviceRgb(59, 111, 224);
-    private static final DeviceRgb AZUL_SUAVE = new DeviceRgb(234, 240, 253);
-    private static final DeviceRgb CREMA = new DeviceRgb(247, 243, 236);
-    private static final DeviceRgb GRIS = new DeviceRgb(107, 107, 100);
-    private static final DeviceRgb NEGRO = new DeviceRgb(26, 26, 26);
-    private static final DeviceRgb BORDE = new DeviceRgb(214, 208, 196);
+    private static final Locale ES = Locale.forLanguageTag("es-ES");
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    private static final DeviceRgb FONDO = new DeviceRgb(240, 239, 235);
+    private static final DeviceRgb NEGRO = new DeviceRgb(20, 20, 20);
+    private static final DeviceRgb GRIS_TOTAL = new DeviceRgb(201, 201, 201);
+    private static final DeviceRgb AZUL_LOGO = new DeviceRgb(102, 153, 255);
+
+    // Mismas posiciones que FacturaPdfService (A4 = 595 x 842 puntos)
+    private static final float IZQ = 53.5f;
+    private static final float DER = 541.7f;
+    private static final float COL_1 = 286.0f;
+    private static final float COL_2 = 356.9f;
+    private static final float COL_3 = 431.5f;
+    private static final float CENTRO_HORAS = 321.4f;
+    private static final float CENTRO_PRECIO = 395.0f;
+    private static final float CENTRO_SUBTOTAL = 470.2f;
+    private static final float X_CONCEPTO = 110.1f;
+    private static final float ANCHO_CONCEPTO = 167.9f;
 
     public PresupuestoPdfService(PresupuestoRepository presupuestoRepository) {
         this.presupuestoRepository = presupuestoRepository;
@@ -53,196 +80,315 @@ public class PresupuestoPdfService {
 
         ByteArrayOutputStream salida = new ByteArrayOutputStream();
         try (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(salida))) {
-            Document documento = new Document(pdfDoc, PageSize.A4);
-            documento.setMargins(40, 40, 40, 40);
-            documento.setBackgroundColor(CREMA);
+            PdfCanvas c = new PdfCanvas(pdfDoc.addNewPage(PageSize.A4));
 
-            documento.add(construirCabecera(p));
-            documento.add(construirCajaNumeroFecha(p));
-            documento.add(construirCajaCliente(p));
-            documento.add(construirTablaConcepto(p));
-            documento.add(construirTotales(p));
-            documento.add(construirPie());
+            PdfFont negrita = cargarFuente("fonts/Montserrat-Bold.ttf", StandardFonts.HELVETICA_BOLD);
+            PdfFont media = cargarFuente("fonts/Montserrat-Medium.ttf", StandardFonts.HELVETICA);
+            PdfFont normal = cargarFuente("fonts/Questrial-Regular.ttf", StandardFonts.HELVETICA);
 
-            documento.close();
+            c.setFillColor(FONDO)
+                    .rectangle(0, 0, PageSize.A4.getWidth(), PageSize.A4.getHeight())
+                    .fill();
+
+            dibujarCabecera(c, normal);
+            dibujarClienteYPresupuesto(c, p, negrita, normal);
+            dibujarTablaConceptos(c, p.getLineas(), negrita, normal);
+            dibujarNotas(c, p, negrita, normal);
+            dibujarTotales(c, p, negrita, media);
+            dibujarPie(c, negrita, normal);
         }
 
         return salida.toByteArray();
     }
 
-    private Table construirCabecera(Presupuesto p) {
-        Table fila = new Table(UnitValue.createPercentArray(new float[] { 30, 70 })).useAllAvailableWidth();
+    // ---------- Bloques ----------
 
-        Table logoBox = new Table(1).setWidth(UnitValue.createPointValue(70));
-        logoBox.addCell(new Cell()
-                .add(new Paragraph("Mokeal").setFontColor(ColorConstants.WHITE).setBold().setFontSize(14)
-                        .setTextAlignment(TextAlignment.CENTER))
-                .setBackgroundColor(AZUL_PRIMARIO)
-                .setBorder(Border.NO_BORDER)
-                .setHeight(50)
-                .setVerticalAlignment(VerticalAlignment.MIDDLE));
+    private void dibujarCabecera(PdfCanvas c, PdfFont normal) {
+        float x = IZQ, y = 735.0f, lado = 78.6f;
+        ImageData logo = null;
 
-        Cell celdaLogo = new Cell().setBorder(Border.NO_BORDER).add(logoBox);
+        try (InputStream inputStream = getClass().getResourceAsStream("/static/logofactura.png")) {
 
-        Cell celdaEmpresa = new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.RIGHT);
-        celdaEmpresa.add(new Paragraph(empresaNombre).setBold().setFontSize(12).setFontColor(NEGRO));
-        if (!empresaNif.isBlank())
-            celdaEmpresa.add(new Paragraph(empresaNif).setFontSize(9).setFontColor(GRIS));
-        if (!empresaDireccion.isBlank())
-            celdaEmpresa.add(new Paragraph(empresaDireccion).setFontSize(9).setFontColor(GRIS));
-        if (!empresaTelefono.isBlank())
-            celdaEmpresa.add(new Paragraph(empresaTelefono).setFontSize(9).setFontColor(GRIS));
-        if (!empresaEmail.isBlank())
-            celdaEmpresa.add(new Paragraph(empresaEmail).setFontSize(9).setFontColor(GRIS));
-
-        fila.addCell(celdaLogo);
-        fila.addCell(celdaEmpresa);
-        return fila;
-    }
-
-    private Table construirCajaNumeroFecha(Presupuesto p) {
-        Table contenedor = new Table(UnitValue.createPercentArray(new float[] { 60, 40 }))
-                .useAllAvailableWidth().setMarginTop(15);
-        contenedor.addCell(new Cell().setBorder(Border.NO_BORDER));
-
-        Table caja = new Table(UnitValue.createPercentArray(new float[] { 45, 55 }))
-                .useAllAvailableWidth().setBorder(new SolidBorder(BORDE, 0.7f));
-
-        caja.addCell(celdaEtiquetaCaja("Presupuesto"));
-        caja.addCell(celdaValorCaja(p.getNumero()));
-        caja.addCell(celdaEtiquetaCaja("Fecha"));
-        caja.addCell(celdaValorCaja(p.getFechaEmision().toString()));
-
-        contenedor.addCell(new Cell().add(caja).setBorder(Border.NO_BORDER).setPadding(0));
-        return contenedor;
-    }
-
-    private Cell celdaEtiquetaCaja(String texto) {
-        return new Cell().add(new Paragraph(texto).setBold().setFontSize(9))
-                .setBackgroundColor(AZUL_SUAVE).setPadding(5).setBorder(new SolidBorder(BORDE, 0.5f));
-    }
-
-    private Cell celdaValorCaja(String texto) {
-        return new Cell().add(new Paragraph(texto).setFontSize(9))
-                .setPadding(5).setBorder(new SolidBorder(BORDE, 0.5f));
-    }
-
-    private Div construirCajaCliente(Presupuesto p) {
-        Div caja = new Div().setBorder(new SolidBorder(BORDE, 0.7f)).setPadding(12).setMarginTop(15);
-        caja.add(new Paragraph("CLIENTE").setBold().setFontSize(9).setMarginBottom(4));
-
-        Table datos = new Table(UnitValue.createPercentArray(new float[] { 20, 80 })).useAllAvailableWidth();
-        datos.addCell(etiquetaSinBorde("Nombre:"));
-        datos.addCell(valorSinBorde(p.getCliente().getNombre(), true));
-
-        if (p.getCliente().getNif() != null && !p.getCliente().getNif().isBlank()) {
-            datos.addCell(etiquetaSinBorde("CIF/NIF:"));
-            datos.addCell(valorSinBorde(p.getCliente().getNif(), true));
-        }
-
-        if (p.getCliente().getDireccion() != null && !p.getCliente().getDireccion().isBlank()) {
-            String direccionCompleta = p.getCliente().getDireccion();
-            if (p.getCliente().getCodigoPostal() != null && !p.getCliente().getCodigoPostal().isBlank()) {
-                direccionCompleta += ", " + p.getCliente().getCodigoPostal();
+            if (inputStream != null) {
+                logo = ImageDataFactory.create(inputStream.readAllBytes());
+            } else {
+                System.err.println("No se encuentra logofactura.png");
             }
-            datos.addCell(etiquetaSinBorde("Dirección:"));
-            datos.addCell(valorSinBorde(direccionCompleta, false));
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error al cargar el logo de la factura", e);
         }
 
-        caja.add(datos);
-        return caja;
+        c.saveState();
+        c.roundRectangle(x, y, lado, lado, 13);
+        c.clip();
+        c.endPath();
+        if (logo != null) {
+            c.addImageFittedIntoRectangle(logo, new Rectangle(x, y, lado, lado), false);
+        } else {
+            c.setFillColor(AZUL_LOGO).rectangle(x, y, lado, lado).fill();
+        }
+        c.restoreState();
+
+        List<String> datos = new ArrayList<>();
+        datos.add(empresaNombre);
+        if (!empresaNif.isBlank())
+            datos.add(empresaNif);
+        if (!empresaDireccion.isBlank())
+            datos.add(empresaDireccion);
+        if (!empresaTelefono.isBlank())
+            datos.add(empresaTelefono);
+        if (!empresaEmail.isBlank())
+            datos.add(empresaEmail);
+
+        float yy = 803.3f;
+        for (String linea : datos) {
+            texto(c, normal, 11, NEGRO, 151.4f, yy, linea);
+            yy -= 16.4f;
+        }
     }
 
-    private Cell etiquetaSinBorde(String texto) {
-        return new Cell().add(new Paragraph(texto).setFontSize(9).setFontColor(GRIS))
-                .setBorder(Border.NO_BORDER).setPaddingBottom(3);
-    }
+    private void dibujarClienteYPresupuesto(PdfCanvas c, Presupuesto p, PdfFont negrita, PdfFont normal) {
+        linea(c, IZQ, DER, 711.8f, 0.8f);
 
-    private Cell valorSinBorde(String texto, boolean negrita) {
-        Paragraph par = new Paragraph(texto).setFontSize(9);
-        if (negrita)
-            par.setBold();
-        return new Cell().add(par).setBorder(Border.NO_BORDER).setPaddingBottom(3);
-    }
+        texto(c, negrita, 10.5f, NEGRO, 58.6f, 693.3f, "CLIENTE");
 
-    private Table construirTablaConcepto(Presupuesto p) {
-        Table tabla = new Table(UnitValue.createPercentArray(new float[] { 45, 18, 18, 19 }))
-                .useAllAvailableWidth().setMarginTop(20);
+        List<String> datos = new ArrayList<>();
+        if (hay(p.getNombre()))
+            datos.addAll(partir("Nombre: " + p.getNombre(), normal, 10.5f, 280f));
+        if (hay(p.getTelefono()))
+            datos.add("Teléfono: " + p.getTelefono());
+        if (hay(p.getCorreo()))
+            datos.addAll(partir("Correo: " + p.getCorreo(), normal, 10.5f, 280f));
+        if (hay(p.getDireccion()))
+            datos.addAll(partir("Dirección: " + p.getDireccion(), normal, 10.5f, 280f));
+        if (datos.size() > 4)
+            datos = new ArrayList<>(datos.subList(0, 4));
 
-        tabla.addHeaderCell(celdaCabecera("CONCEPTO", TextAlignment.LEFT));
-        tabla.addHeaderCell(celdaCabecera("HORAS", TextAlignment.CENTER));
-        tabla.addHeaderCell(celdaCabecera("€/HORA", TextAlignment.CENTER));
-        tabla.addHeaderCell(celdaCabecera("SUBTOTAL", TextAlignment.RIGHT));
-
-        for (com.mokeal.gestion.model.LineaPresupuesto linea : p.getLineas()) {
-            tabla.addCell(celdaFila(linea.getConcepto(), TextAlignment.LEFT));
-            tabla.addCell(celdaFila(String.format("%.2f", linea.getHoras()), TextAlignment.CENTER));
-            tabla.addCell(celdaFila(String.format("%.2f €", linea.getPrecioHora()), TextAlignment.CENTER));
-            tabla.addCell(celdaFila(String.format("%.2f €", linea.getSubtotal()), TextAlignment.RIGHT));
+        // Con cuatro líneas se aprieta un poco el interlineado para no tocar la raya de
+        // abajo
+        boolean cuatro = datos.size() > 3;
+        float paso = cuatro ? 13.2f : 16.4f;
+        float yy = cuatro ? 676.0f : 674.4f;
+        for (String l : datos) {
+            texto(c, normal, 10.5f, NEGRO, 58.6f, yy, l);
+            yy -= paso;
         }
 
-        return tabla;
+        String etiqueta = "PRESUPUESTO Nº:";
+        float w1 = negrita.getWidth(etiqueta, 11);
+        float w2 = normal.getWidth(p.getNumero(), 11);
+        float xr = Math.min(364.5f, DER - (w1 + 4 + w2));
+
+        texto(c, negrita, 11, NEGRO, xr, 691.8f, etiqueta);
+        texto(c, normal, 11, NEGRO, xr + w1 + 4, 691.8f, p.getNumero());
+        texto(c, negrita, 11, NEGRO, xr, 670.6f, "Fecha:");
+        texto(c, normal, 11, NEGRO, xr + negrita.getWidth("Fecha:", 11) + 4, 670.6f,
+                p.getFechaEmision().format(FECHA));
+
+        linea(c, IZQ, DER, 624.9f, 0.8f);
     }
 
-    private Cell celdaCabecera(String texto, TextAlignment alineacion) {
-        return new Cell().add(new Paragraph(texto).setBold().setFontSize(9))
-                .setBackgroundColor(AZUL_SUAVE).setTextAlignment(alineacion).setPadding(7)
-                .setBorder(new SolidBorder(BORDE, 0.5f));
-    }
+    private void dibujarTablaConceptos(PdfCanvas c, List<LineaPresupuesto> lineas, PdfFont negrita, PdfFont normal) {
+        float yCab = 586.9f;
+        texto(c, negrita, 10.5f, NEGRO, X_CONCEPTO, yCab, "Concepto");
+        centrado(c, negrita, 10.5f, NEGRO, CENTRO_HORAS, yCab, "Horas");
+        centrado(c, negrita, 10.5f, NEGRO, CENTRO_PRECIO, yCab, "€/Hora");
+        centrado(c, negrita, 10.5f, NEGRO, CENTRO_SUBTOTAL, yCab, "Subtotal");
 
-    private Cell celdaFila(String texto, TextAlignment alineacion) {
-        return new Cell().add(new Paragraph(texto).setFontSize(9.5f))
-                .setTextAlignment(alineacion).setPadding(7).setBorder(new SolidBorder(BORDE, 0.5f));
-    }
-
-    private Table construirTotales(Presupuesto p) {
-        BigDecimal descuentoPct = p.getDescuentoPorcentaje() != null ? p.getDescuentoPorcentaje() : BigDecimal.ZERO;
-        BigDecimal importeDescuento = p.getSubtotal().multiply(descuentoPct).divide(BigDecimal.valueOf(100));
-
-        Table contenedor = new Table(UnitValue.createPercentArray(new float[] { 55, 45 }))
-                .useAllAvailableWidth().setMarginTop(15);
-        contenedor.addCell(new Cell().setBorder(Border.NO_BORDER));
-
-        Table caja = new Table(UnitValue.createPercentArray(new float[] { 55, 45 }))
-                .useAllAvailableWidth().setBorder(new SolidBorder(BORDE, 0.7f));
-
-        filaTotal(caja, "SUBTOTAL", String.format("%.2f €", p.getSubtotal()), false);
-        filaTotal(caja, "DESCUENTO %", descuentoPct.stripTrailingZeros().toPlainString() + "%", false);
-        filaTotal(caja, "DESCUENTO €", String.format("%.2f €", importeDescuento), false);
-        filaTotal(caja, "TOTAL ESTIMADO", String.format("%.2f €", p.getTotal()), true);
-
-        contenedor.addCell(new Cell().add(caja).setBorder(Border.NO_BORDER).setPadding(0));
-        return contenedor;
-    }
-
-    private void filaTotal(Table tabla, String etiqueta, String valor, boolean destacado) {
-        Paragraph pEtiqueta = new Paragraph(etiqueta).setFontSize(destacado ? 11 : 9);
-        Paragraph pValor = new Paragraph(valor).setFontSize(destacado ? 11 : 9).setTextAlignment(TextAlignment.RIGHT);
-        if (destacado) {
-            pEtiqueta.setBold();
-            pValor.setBold();
+        for (float x : new float[] { COL_1, COL_2, COL_3 }) {
+            c.setStrokeColor(NEGRO).setLineWidth(0.8f).moveTo(x, 563.0f).lineTo(x, 380.1f).stroke();
         }
 
-        Cell celdaEtiqueta = new Cell().add(pEtiqueta).setPadding(6).setBorder(new SolidBorder(BORDE, 0.4f));
-        Cell celdaValor = new Cell().add(pValor).setPadding(6).setBorder(new SolidBorder(BORDE, 0.4f));
+        c.setFillColor(NEGRO).rectangle(IZQ, 368.6f, DER - IZQ, 11.5f).fill();
 
-        if (destacado) {
-            celdaEtiqueta.setBackgroundColor(AZUL_PRIMARIO);
-            celdaValor.setBackgroundColor(AZUL_PRIMARIO);
-            celdaEtiqueta.setFontColor(ColorConstants.WHITE);
-            celdaValor.setFontColor(ColorConstants.WHITE);
+        int n = lineas.size();
+        float paso = n <= 5 ? 29.6f : Math.max(14f, (531.4f - 392f) / (n - 1));
+        float tam = paso >= 20 ? 10f : 8.5f;
+
+        for (int i = 0; i < n; i++) {
+            LineaPresupuesto l = lineas.get(i);
+            float y = 531.4f - i * paso;
+
+            double horas = l.getHoras() != null ? l.getHoras() : 0;
+            BigDecimal precio = l.getPrecioHora() != null ? l.getPrecioHora() : BigDecimal.ZERO;
+            BigDecimal importe = l.getSubtotal() != null ? l.getSubtotal() : BigDecimal.ZERO;
+            String etiqueta = (l.getConcepto() != null ? l.getConcepto() : "").toUpperCase(ES);
+
+            if (n <= 5) {
+                List<String> partes = partir(etiqueta, normal, tam, ANCHO_CONCEPTO);
+                texto(c, normal, tam, NEGRO, X_CONCEPTO, y, partes.get(0));
+                if (partes.size() > 1) {
+                    String resto = String.join(" ", partes.subList(1, partes.size()));
+                    texto(c, normal, tam, NEGRO, X_CONCEPTO, y - 12, recortar(resto, normal, tam, ANCHO_CONCEPTO));
+                }
+            } else {
+                texto(c, normal, tam, NEGRO, X_CONCEPTO, y, recortar(etiqueta, normal, tam, ANCHO_CONCEPTO));
+            }
+
+            centrado(c, normal, tam, NEGRO, CENTRO_HORAS, y, formato(horas, 0, 2));
+            centrado(c, normal, tam, NEGRO, CENTRO_PRECIO, y, libre(precio.doubleValue()) + "€");
+            centrado(c, normal, tam, NEGRO, CENTRO_SUBTOTAL, y, libre(importe.doubleValue()) + "€");
         }
-
-        tabla.addCell(celdaEtiqueta);
-        tabla.addCell(celdaValor);
     }
 
-    private Div construirPie() {
-        Div pie = new Div().setMarginTop(35);
-        pie.add(new Paragraph("Presupuesto sin IVA incluido. Válido salvo confirmación de disponibilidad.")
-                .setFontSize(9).setFontColor(GRIS));
-        pie.add(new Paragraph("GRACIAS POR CONFIAR EN NOSOTROS").setBold().setFontSize(10)
-                .setFontColor(AZUL_PRIMARIO).setMarginTop(10));
-        return pie;
+    // Las notas van a la izquierda, bajo la barra negra, al lado de la caja de
+    // totales
+    private void dibujarNotas(PdfCanvas c, Presupuesto p, PdfFont negrita, PdfFont normal) {
+        if (!hay(p.getNotas()))
+            return;
+
+        texto(c, negrita, 10.5f, NEGRO, IZQ, 345.0f, "Notas");
+        List<String> partes = partir(p.getNotas().trim(), normal, 10f, 262f);
+        float y = 329.0f;
+        for (int i = 0; i < Math.min(partes.size(), 8); i++) {
+            texto(c, normal, 10f, NEGRO, IZQ, y, partes.get(i));
+            y -= 14f;
+        }
+    }
+
+    private void dibujarTotales(PdfCanvas c, Presupuesto p, PdfFont negrita, PdfFont media) {
+        BigDecimal subtotal = p.getSubtotal();
+        BigDecimal pct = p.getDescuentoPorcentaje() != null ? p.getDescuentoPorcentaje() : BigDecimal.ZERO;
+        BigDecimal descuento = subtotal.multiply(pct).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal baseFinal = subtotal.subtract(descuento);
+        BigDecimal ivaPct = p.getIvaPorcentaje() != null ? p.getIvaPorcentaje() : BigDecimal.ZERO;
+        BigDecimal iva = p.getIvaImporte() != null ? p.getIvaImporte() : BigDecimal.ZERO;
+
+        String[][] filas = {
+                { "Base Imponible", dos(subtotal) + " €" },
+                { "Descuento %", dos(pct) + " %" },
+                { "Descuento €", dos(descuento) + " €" },
+                { "Base final", dos(baseFinal) + " €" },
+                { "IVA " + formato(ivaPct.doubleValue(), 0, 2) + " %", dos(iva) + " €" },
+                { "TOTAL", dos(p.getTotal()) + " €" }
+        };
+
+        float izq = 339.4f, der = 519.7f, divisor = 433.4f, arriba = 368.6f, alto = 22.98f;
+
+        c.setFillColor(GRIS_TOTAL).rectangle(izq, arriba - 6 * alto, der - izq, alto).fill();
+
+        for (int i = 1; i <= 6; i++) {
+            linea(c, izq, der, arriba - i * alto, i == 5 ? 2.2f : 0.8f);
+        }
+        c.setStrokeColor(NEGRO).setLineWidth(0.8f)
+                .moveTo(divisor, arriba).lineTo(divisor, arriba - 6 * alto).stroke();
+
+        for (int i = 0; i < filas.length; i++) {
+            float base = arriba - i * alto - 15.2f;
+            texto(c, i == 5 ? negrita : media, 10.5f, NEGRO, izq, base, filas[i][0]);
+            derecha(c, negrita, 10.5f, NEGRO, der - 2f, base, filas[i][1]);
+        }
+    }
+
+    private void dibujarPie(PdfCanvas c, PdfFont negrita, PdfFont normal) {
+        texto(c, negrita, 11, NEGRO, IZQ, 108.4f, "INGRESAR AL NÚMERO DE CUENTA");
+        if (!cuentaBancaria.isBlank()) {
+            texto(c, normal, 11, NEGRO, IZQ, 82.7f, cuentaBancaria);
+        }
+        derecha(c, negrita, 10.5f, NEGRO, 539f, 82.7f, "¡GRACIAS POR SU CONFIANZA!");
+    }
+
+    // ---------- Dibujo ----------
+
+    private void texto(PdfCanvas c, PdfFont fuente, float tam, Color color, float x, float y, String t) {
+        c.setFillColor(color);
+        c.beginText().setFontAndSize(fuente, tam).moveText(x, y).showText(t).endText();
+    }
+
+    private void centrado(PdfCanvas c, PdfFont fuente, float tam, Color color, float cx, float y, String t) {
+        texto(c, fuente, tam, color, cx - fuente.getWidth(t, tam) / 2, y, t);
+    }
+
+    private void derecha(PdfCanvas c, PdfFont fuente, float tam, Color color, float xDer, float y, String t) {
+        texto(c, fuente, tam, color, xDer - fuente.getWidth(t, tam), y, t);
+    }
+
+    private void linea(PdfCanvas c, float x1, float x2, float y, float grosor) {
+        c.setStrokeColor(NEGRO).setLineWidth(grosor).moveTo(x1, y).lineTo(x2, y).stroke();
+    }
+
+    private List<String> partir(String texto, PdfFont fuente, float tam, float ancho) {
+        List<String> lineas = new ArrayList<>();
+        StringBuilder actual = new StringBuilder();
+        for (String palabra : texto.trim().split("\\s+")) {
+            String prueba = actual.length() == 0 ? palabra : actual + " " + palabra;
+            if (actual.length() == 0 || fuente.getWidth(prueba, tam) <= ancho) {
+                actual = new StringBuilder(prueba);
+            } else {
+                lineas.add(actual.toString());
+                actual = new StringBuilder(palabra);
+            }
+        }
+        if (actual.length() > 0)
+            lineas.add(actual.toString());
+        if (lineas.isEmpty())
+            lineas.add("");
+        return lineas;
+    }
+
+    private String recortar(String t, PdfFont fuente, float tam, float ancho) {
+        if (fuente.getWidth(t, tam) <= ancho)
+            return t;
+        String base = t;
+        while (base.length() > 1 && fuente.getWidth(base + "...", tam) > ancho) {
+            base = base.substring(0, base.length() - 1);
+        }
+        return base.trim() + "...";
+    }
+
+    private boolean hay(String s) {
+        return s != null && !s.isBlank();
+    }
+
+    // ---------- Formato ----------
+
+    private String formato(double valor, int min, int max) {
+        NumberFormat nf = NumberFormat.getNumberInstance(ES);
+        nf.setMinimumFractionDigits(min);
+        nf.setMaximumFractionDigits(max);
+        nf.setRoundingMode(RoundingMode.HALF_UP);
+        return nf.format(valor);
+    }
+
+    private String dos(BigDecimal v) {
+        return formato(v.doubleValue(), 2, 2);
+    }
+
+    private String libre(double v) {
+        boolean entero = Math.abs(v - Math.rint(v)) < 0.005;
+        return entero ? formato(v, 0, 0) : formato(v, 2, 2);
+    }
+
+    // ---------- Recursos ----------
+
+    private ImageData cargarLogo() {
+        try (InputStream is = new ClassPathResource("static/logo.png").getInputStream()) {
+            return ImageDataFactory.create(is.readAllBytes());
+        } catch (Exception e) {
+            System.err.println("No se pudo cargar el logo: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private PdfFont cargarFuente(String ruta, String respaldo) {
+        try {
+            ClassPathResource recurso = new ClassPathResource(ruta);
+            if (recurso.exists()) {
+                byte[] bytes;
+                try (InputStream is = recurso.getInputStream()) {
+                    bytes = is.readAllBytes();
+                }
+                return PdfFontFactory.createFont(FontProgramFactory.createFont(bytes),
+                        PdfEncodings.IDENTITY_H, PdfFontFactory.EmbeddingStrategy.FORCE_EMBEDDED);
+            }
+        } catch (Exception e) {
+            System.err.println("No se pudo cargar la fuente " + ruta + ": " + e.getMessage());
+        }
+        try {
+            return PdfFontFactory.createFont(respaldo);
+        } catch (IOException e) {
+            throw new RuntimeException("No se pudo crear la fuente de respaldo", e);
+        }
     }
 }

@@ -18,9 +18,17 @@ public class Presupuesto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = false)
-    private Cliente cliente;
+    @Column(length = 150)
+    private String nombre;
+
+    @Column(length = 30)
+    private String telefono;
+
+    @Column(length = 120)
+    private String correo;
+
+    @Column(length = 255)
+    private String direccion;
 
     @Column(nullable = false, unique = true, length = 30)
     private String numero;
@@ -30,18 +38,21 @@ public class Presupuesto {
     @Builder.Default
     private List<LineaPresupuesto> lineas = new ArrayList<>();
 
+    @Column(length = 500)
+    private String notas;
+
     @Column(nullable = false)
     private BigDecimal subtotal;
 
     @Builder.Default
     private BigDecimal descuentoPorcentaje = BigDecimal.ZERO;
 
+    private BigDecimal ivaPorcentaje;
+
+    private BigDecimal ivaImporte;
+
     @Column(nullable = false)
     private BigDecimal total;
-
-    @Enumerated(EnumType.STRING)
-    @Builder.Default
-    private EstadoPresupuesto estado = EstadoPresupuesto.PENDIENTE;
 
     @Column(nullable = false)
     private LocalDate fechaEmision;

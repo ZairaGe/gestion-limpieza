@@ -1,5 +1,3 @@
-export type EstadoPresupuesto = 'PENDIENTE' | 'ACEPTADO' | 'RECHAZADO';
-
 export interface LineaPresupuesto {
   concepto: string;
   horas: number;
@@ -9,14 +7,18 @@ export interface LineaPresupuesto {
 
 export interface Presupuesto {
   id?: number;
-  clienteId: number;
-  clienteNombre: string;
+  nombre: string | null;
+  telefono?: string | null;
+  correo?: string | null;
+  direccion?: string | null;
   numero: string;
   lineas: LineaPresupuesto[];
+  notas?: string | null;
   subtotal: number;
   descuentoPorcentaje: number;
+  ivaPorcentaje: number;
+  ivaImporte: number;
   total: number;
-  estado: EstadoPresupuesto;
   fechaEmision: string;
 }
 
@@ -27,8 +29,13 @@ export interface LineaPresupuestoRequest {
 }
 
 export interface PresupuestoRequest {
-  clienteId: number;
+  nombre: string;
+  telefono: string | null;
+  correo: string | null;
+  direccion: string | null;
   lineas: LineaPresupuestoRequest[];
+  notas: string | null;
   descuentoPorcentaje: number;
+  ivaPorcentaje: number;
   fechaEmision: string;
 }

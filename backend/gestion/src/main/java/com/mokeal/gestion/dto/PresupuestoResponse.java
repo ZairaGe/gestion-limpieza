@@ -1,6 +1,5 @@
 package com.mokeal.gestion.dto;
 
-import com.mokeal.gestion.model.EstadoPresupuesto;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -10,14 +9,18 @@ import java.util.List;
 @Builder
 public class PresupuestoResponse {
     private Long id;
-    private Long clienteId;
-    private String clienteNombre;
+    private String nombre;
+    private String telefono;
+    private String correo;
+    private String direccion;
     private String numero;
     private List<LineaResponse> lineas;
+    private String notas;
     private BigDecimal subtotal;
     private BigDecimal descuentoPorcentaje;
+    private BigDecimal ivaPorcentaje;
+    private BigDecimal ivaImporte;
     private BigDecimal total;
-    private EstadoPresupuesto estado;
     private LocalDate fechaEmision;
 
     @Data

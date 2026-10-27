@@ -9,19 +9,22 @@ export class PresupuestoService {
 
   private apiUrl = `${environment.apiUrl}/presupuestos`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
-  listar(clienteId?: number): Observable<Presupuesto[]> {
-    const params: Record<string, string | number> = clienteId ? { clienteId } : {};
-    return this.http.get<Presupuesto[]>(this.apiUrl, { params });
+  listar(): Observable<Presupuesto[]> {
+    return this.http.get<Presupuesto[]>(this.apiUrl);
+  }
+
+  buscarPorId(id: number): Observable<Presupuesto> {
+    return this.http.get<Presupuesto>(`${this.apiUrl}/${id}`);
   }
 
   crear(request: PresupuestoRequest): Observable<Presupuesto> {
     return this.http.post<Presupuesto>(this.apiUrl, request);
   }
 
-  cambiarEstado(id: number, estado: string): Observable<Presupuesto> {
-    return this.http.patch<Presupuesto>(`${this.apiUrl}/${id}/estado`, { estado });
+  actualizar(id: number, request: PresupuestoRequest): Observable<Presupuesto> {
+    return this.http.put<Presupuesto>(`${this.apiUrl}/${id}`, request);
   }
 
   eliminar(id: number): Observable<void> {

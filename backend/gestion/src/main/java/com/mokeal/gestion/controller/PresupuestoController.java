@@ -2,14 +2,13 @@ package com.mokeal.gestion.controller;
 
 import com.mokeal.gestion.dto.PresupuestoRequest;
 import com.mokeal.gestion.dto.PresupuestoResponse;
-import com.mokeal.gestion.model.EstadoPresupuesto;
 import com.mokeal.gestion.service.PresupuestoPdfService;
 import com.mokeal.gestion.service.PresupuestoService;
 import jakarta.validation.Valid;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/presupuestos")
@@ -24,10 +23,7 @@ public class PresupuestoController {
     }
 
     @GetMapping
-    public List<PresupuestoResponse> listar(@RequestParam(required = false) Long clienteId) {
-        if (clienteId != null) {
-            return presupuestoService.listarPorCliente(clienteId);
-        }
+    public List<PresupuestoResponse> listar() {
         return presupuestoService.listarTodos();
     }
 
@@ -41,9 +37,11 @@ public class PresupuestoController {
         return ResponseEntity.status(201).body(presupuestoService.crear(request));
     }
 
-    @PatchMapping("/{id}/estado")
-    public PresupuestoResponse cambiarEstado(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        return presupuestoService.cambiarEstado(id, EstadoPresupuesto.valueOf(body.get("estado")));
+    @PutMapping("/{id}")
+    public ResponseEntity<PresupuestoResponse> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody PresupuestoRequest request) {
+        return ResponseEntity.ok(presupuestoService.actualizar(id, request));
     }
 
     @DeleteMapping("/{id}")
