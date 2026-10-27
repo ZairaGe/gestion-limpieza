@@ -16,120 +16,124 @@ import java.util.stream.Collectors;
 @Service
 public class FacturacionService {
 
-    private final ServicioRepository servicioRepository;
-    private final ClienteRepository clienteRepository;
-    private final FacturaRepository facturaRepository;
+        private final ServicioRepository servicioRepository;
+        private final ClienteRepository clienteRepository;
+        private final FacturaRepository facturaRepository;
 
-    public FacturacionService(ServicioRepository servicioRepository, ClienteRepository clienteRepository,
-            FacturaRepository facturaRepository) {
-        this.servicioRepository = servicioRepository;
-        this.clienteRepository = clienteRepository;
-        this.facturaRepository = facturaRepository;
-    }
-
-    public FacturacionPendienteResponse obtenerPendientes(Long clienteId, LocalDate desde, LocalDate hasta) {
-        List<Servicio> servicios = servicioRepository
-                .findByClienteIdAndFechaBetweenAndFacturaIsNull(clienteId, desde, hasta);
-
-        List<ServicioPendiente> resumen = servicios.stream()
-                .map(s -> ServicioPendiente.builder()
-                        .id(s.getId())
-                        .fecha(s.getFecha())
-                        .horaInicio(s.getHoraInicio())
-                        .horaFin(s.getHoraFin())
-                        .direccion(s.getDireccion())
-                        .importe(calcularCoste(s))
-                        .build())
-                .collect(Collectors.toList());
-
-        BigDecimal total = resumen.stream()
-                .map(ServicioPendiente::getImporte)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        return FacturacionPendienteResponse.builder()
-                .servicios(resumen)
-                .totalImporte(total)
-                .build();
-    }
-
-    public Factura generarFactura(GenerarFacturaRequest request) {
-        Cliente cliente = clienteRepository.findById(request.getClienteId())
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
-
-        List<Servicio> servicios = servicioRepository.findAllById(request.getServicioIds());
-
-        if (servicios.isEmpty()) {
-            throw new RuntimeException("No se encontraron los servicios seleccionados");
+        public FacturacionService(ServicioRepository servicioRepository, ClienteRepository clienteRepository,
+                        FacturaRepository facturaRepository) {
+                this.servicioRepository = servicioRepository;
+                this.clienteRepository = clienteRepository;
+                this.facturaRepository = facturaRepository;
         }
 
-        for (Servicio s : servicios) {
-            if (s.getFactura() != null) {
-                throw new RuntimeException("El servicio del " + s.getFecha() + " ya está facturado");
-            }
-            if (!s.getCliente().getId().equals(request.getClienteId())) {
-                throw new RuntimeException("Todos los servicios deben ser del mismo cliente");
-            }
+        public FacturacionPendienteResponse obtenerPendientes(Long clienteId, LocalDate desde, LocalDate hasta) {
+                List<Servicio> servicios = servicioRepository
+                                .findByClienteIdAndFechaBetweenAndFacturaIsNull(clienteId, desde, hasta).stream()
+                                .filter(s -> s.getEstado() != EstadoServicio.CANCELADO)
+                                .collect(Collectors.toList());
+
+                List<ServicioPendiente> resumen = servicios.stream()
+                                .map(s -> ServicioPendiente.builder()
+                                                .id(s.getId())
+                                                .fecha(s.getFecha())
+                                                .horaInicio(s.getHoraInicio())
+                                                .horaFin(s.getHoraFin())
+                                                .direccion(s.getDireccion())
+                                                .importe(calcularCoste(s))
+                                                .build())
+                                .collect(Collectors.toList());
+
+                BigDecimal total = resumen.stream()
+                                .map(ServicioPendiente::getImporte)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                return FacturacionPendienteResponse.builder()
+                                .servicios(resumen)
+                                .totalImporte(total)
+                                .build();
         }
 
-        BigDecimal subtotal = servicios.stream()
-                .map(this::calcularCoste)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, java.math.RoundingMode.HALF_UP);
+        public Factura generarFactura(GenerarFacturaRequest request) {
+                Cliente cliente = clienteRepository.findById(request.getClienteId())
+                                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
-        BigDecimal descuentoPorcentaje = request.getDescuentoPorcentaje() != null
-                ? BigDecimal.valueOf(request.getDescuentoPorcentaje())
-                : BigDecimal.ZERO;
+                List<Servicio> servicios = servicioRepository.findAllById(request.getServicioIds());
 
-        BigDecimal importeDescuento = subtotal.multiply(descuentoPorcentaje)
-                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+                if (servicios.isEmpty()) {
+                        throw new RuntimeException("No se encontraron los servicios seleccionados");
+                }
 
-        BigDecimal baseImponible = subtotal.subtract(importeDescuento);
+                for (Servicio s : servicios) {
+                        if (s.getFactura() != null) {
+                                throw new RuntimeException("El servicio del " + s.getFecha() + " ya está facturado");
+                        }
+                        if (!s.getCliente().getId().equals(request.getClienteId())) {
+                                throw new RuntimeException("Todos los servicios deben ser del mismo cliente");
+                        }
+                }
 
-        BigDecimal iva = baseImponible.multiply(BigDecimal.valueOf(0.21))
-                .setScale(2, java.math.RoundingMode.HALF_UP);
+                BigDecimal subtotal = servicios.stream()
+                                .map(this::calcularCoste)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                                .setScale(2, java.math.RoundingMode.HALF_UP);
 
-        BigDecimal total = baseImponible.add(iva).setScale(2, java.math.RoundingMode.HALF_UP);
+                BigDecimal descuentoPorcentaje = request.getDescuentoPorcentaje() != null
+                                ? BigDecimal.valueOf(request.getDescuentoPorcentaje())
+                                : BigDecimal.ZERO;
 
-        String numeroFinal = (request.getNumero() != null && !request.getNumero().isBlank())
-                ? request.getNumero()
-                : generarNumero();
+                BigDecimal importeDescuento = subtotal.multiply(descuentoPorcentaje)
+                                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
 
-        Factura factura = Factura.builder()
-                .cliente(cliente)
-                .numero(numeroFinal)
-                .subtotal(subtotal)
-                .descuentoPorcentaje(descuentoPorcentaje)
-                .ivaImporte(iva)
-                .importe(total)
-                .fechaEmision(request.getFechaEmision())
-                .concepto(request.getConcepto() != null && !request.getConcepto().isBlank() ? request.getConcepto()
-                        : "Servicios de limpieza")
-                .build();
+                BigDecimal baseImponible = subtotal.subtract(importeDescuento);
 
-        facturaRepository.save(factura);
+                BigDecimal iva = baseImponible.multiply(BigDecimal.valueOf(0.21))
+                                .setScale(2, java.math.RoundingMode.HALF_UP);
 
-        for (Servicio s : servicios) {
-            s.setFactura(factura);
-            servicioRepository.save(s);
+                BigDecimal total = baseImponible.add(iva).setScale(2, java.math.RoundingMode.HALF_UP);
+
+                String numeroFinal = (request.getNumero() != null && !request.getNumero().isBlank())
+                                ? request.getNumero()
+                                : generarNumero();
+
+                Factura factura = Factura.builder()
+                                .cliente(cliente)
+                                .numero(numeroFinal)
+                                .subtotal(subtotal)
+                                .descuentoPorcentaje(descuentoPorcentaje)
+                                .ivaImporte(iva)
+                                .importe(total)
+                                .fechaEmision(request.getFechaEmision())
+                                .concepto(request.getConcepto() != null && !request.getConcepto().isBlank()
+                                                ? request.getConcepto()
+                                                : "Servicios de limpieza")
+                                .build();
+
+                facturaRepository.save(factura);
+
+                for (Servicio s : servicios) {
+                        s.setFactura(factura);
+                        servicioRepository.save(s);
+                }
+
+                return factura;
         }
 
-        return factura;
-    }
-
-    private BigDecimal calcularCoste(Servicio servicio) {
-        Tarifa tarifa = servicio.getTarifa();
-        if (tarifa.getPrecioFijo() != null) {
-            return tarifa.getPrecioFijo();
+        private BigDecimal calcularCoste(Servicio servicio) {
+                Tarifa tarifa = servicio.getTarifa();
+                if (tarifa.getPrecioFijo() != null) {
+                        return tarifa.getPrecioFijo();
+                }
+                double duracion = servicio.getDuracionHoras() != null
+                                ? servicio.getDuracionHoras()
+                                : (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay())
+                                                / 3600.0;
+                return servicio.calcularImporte();
         }
-        double duracion = servicio.getDuracionHoras() != null
-                ? servicio.getDuracionHoras()
-                : (servicio.getHoraFin().toSecondOfDay() - servicio.getHoraInicio().toSecondOfDay()) / 3600.0;
-        return servicio.calcularImporte();
-    }
 
-    private String generarNumero() {
-        String anio = String.valueOf(Year.now().getValue());
-        long siguiente = facturaRepository.contarPorAnio(anio) + 1;
-        return String.format("FAC-%s-%03d", anio, siguiente);
-    }
+        private String generarNumero() {
+                String anio = String.valueOf(Year.now().getValue());
+                long siguiente = facturaRepository.contarPorAnio(anio) + 1;
+                return String.format("FAC-%s-%03d", anio, siguiente);
+        }
 }

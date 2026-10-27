@@ -32,6 +32,7 @@ public class Servicio {
     @JoinColumn(name = "tarifa_id")
     private Tarifa tarifa;
 
+
     @NotBlank(message = "La dirección es obligatoria")
     @Column(nullable = false, length = 255)
     private String direccion;

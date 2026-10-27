@@ -1,79 +1,93 @@
-<div class="page-header">
-    <div>
-        <h1>Facturación</h1>
-        <p>Controla qué servicios están cobrados y cuáles siguen pendientes.</p>
-    </div>
-</div>
+<header class="page-header">
+    <h1>Facturación</h1>
+    <p>Controla qué servicios completados están cobrados</p>
+</header>
 
-<div class="panel-generacion">
-    <div class="filtro-linea">
-        <div class="form-group">
-            <label>Cliente</label>
-            <select [(ngModel)]="clienteId">
-                <option [ngValue]="0" disabled>Selecciona un cliente</option>
-                @for (cliente of clientes(); track cliente.id) {
-                <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
-                }
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Desde</label>
-            <input type="date" [(ngModel)]="desde" />
-        </div>
-        <div class="form-group">
-            <label>Hasta</label>
-            <input type="date" [(ngModel)]="hasta" />
-        </div>
-        <button class="btn-primary" (click)="buscar()">Buscar</button>
-    </div>
-</div>
-
-@if (error()) {
-<p class="error-message">{{ error() }}</p>
+@if (mensajeExito()) {
+<div class="mensaje-exito">{{ mensajeExito() }}</div>
 }
 
-@if (cargando()) {
-<p class="loading">Cargando servicios...</p>
-} @else if (servicios().length > 0) {
-<div class="resumen-pagos">
-    <div>Total: <strong>{{ totalImporte() | number: '1.2-2' }} €</strong></div>
-    <div class="cobrado">Cobrado: <strong>{{ totalPagado() | number: '1.2-2' }} €</strong></div>
-    <div class="pendiente">Pendiente: <strong>{{ totalPendiente() | number: '1.2-2' }} €</strong></div>
+@if (error()) {
+<p class="error-msg">{{ error() }}</p>
+}
+
+<section class="kpis">
+    <article class="kpi">
+        <span class="kpi-label">Pendiente de cobro</span>
+        <span class="kpi-valor">{{ pendienteCobro() | number: '1.2-2' }} €</span>
+    </article>
+    <article class="kpi">
+        <span class="kpi-label">Cobrado</span>
+        <span class="kpi-valor">{{ cobrado() | number: '1.2-2' }} €</span>
+    </article>
+</section>
+
+<div class="pills">
+    @for (op of opcionesFiltro; track op.valor) {
+    <button class="pill" [class.pill-activo]="filtro() === op.valor" (click)="cambiarFiltro(op.valor)">
+        {{ op.etiqueta }}
+    </button>
+    }
 </div>
 
+@if (cargando()) {
+<p class="estado-msg">Cargando servicios...</p>
+} @else if (filtrados().length === 0) {
+<div class="table-card vacio-card">
+    <p>No hay servicios completados con este filtro.</p>
+</div>
+} @else {
 <div class="table-card">
     <table>
         <thead>
             <tr>
+                <th>Cliente</th>
+                <th>Servicio</th>
                 <th>Fecha</th>
-                <th>Horario</th>
-                <th>Dirección</th>
                 <th>Importe</th>
-                <th>Estado</th>
+                <th>Pago</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
-            @for (s of servicios(); track s.id) {
+            @for (s of paginados(); track s.id) {
             <tr>
-                <td>{{ s.fecha }}</td>
-                <td>{{ s.horaInicio }} - {{ s.horaFin }}</td>
-                <td>{{ s.direccion }}</td>
+                <td class="cliente">{{ s.clienteNombre }}</td>
+                <td>{{ nombreServicio(s) }}</td>
+                <td>{{ fechaHora(s) }}</td>
                 <td>{{ s.importe | number: '1.2-2' }} €</td>
                 <td>
-                    <span class="badge" [class.badge-empresa]="s.pagado">
-                        {{ s.pagado ? 'Pagado' : 'Pendiente' }}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn-icon" (click)="togglePago(s)"
-                        [title]="s.pagado ? 'Marcar pendiente' : 'Marcar pagado'">
-                        {{ s.pagado ? '↺' : '✓' }}
+                    <button type="button" class="pago" [class.pago-ok]="s.pagado" [class.pago-pend]="!s.pagado"
+                        [disabled]="procesando() === s.id"
+                        [title]="s.pagado ? 'Marcar como pendiente' : 'Marcar como pagado'" (click)="togglePago(s)">
+                        {{ textoPago(s) }}
                     </button>
+                </td>
+                <td class="accion">
+                    @if (s.facturado) {
+                    <a routerLink="/facturas" class="facturado">Facturado</a>
+                    } @else {
+                    <button type="button" class="btn-factura" [disabled]="!s.pagado || procesando() === s.id"
+                        [title]="s.pagado ? 'Crear la factura de este servicio' : 'Marca el servicio como pagado para poder facturarlo'"
+                        (click)="crearFactura(s)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                            <path d="M10 9H8" />
+                            <path d="M16 13H8" />
+                            <path d="M16 17H8" />
+                        </svg>
+                        Crear factura
+                    </button>
+                    }
                 </td>
             </tr>
             }
         </tbody>
     </table>
 </div>
+
+<app-paginacion [paginaActual]="paginaEfectiva()" [totalPaginas]="totalPaginas()"
+    (cambioPagina)="cambiarPagina($event)"></app-paginacion>
 }

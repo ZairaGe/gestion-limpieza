@@ -9,6 +9,7 @@ export interface EmpleadoResumen {
 }
 
 export interface Servicio {
+  tarifaNombre: string;
   id?: number;
   clienteId: number;
   clienteNombre: string;
@@ -27,6 +28,7 @@ export interface Servicio {
   pagado?: boolean;
   fechaPago?: string;
   importe?: number;
+  facturado?: boolean;
   recurrente?: boolean;
   precioManual?: number | null;
   notas?: string | null;
@@ -35,6 +37,7 @@ export interface Servicio {
 export interface ServicioRequest {
   clienteId: number;
   tarifaId: number | null;
+  tarifaNombre: string | null;
   direccion: string;
   fecha: string;
   horaInicio: string;

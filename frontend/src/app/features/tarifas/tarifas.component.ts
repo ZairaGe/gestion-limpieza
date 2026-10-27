@@ -2,7 +2,14 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TarifaService } from '../../core/services/tarifa.service';
-import { Tarifa, TipoServicio, Zona } from '../../core/models/tarifa.model';
+import { Tarifa } from '../../core/models/tarifa.model';
+
+interface FormTarifa {
+  nombre: string;
+  descripcion: string;
+  precio: number | null;
+  cobro: 'HORA' | 'SERVICIO';
+}
 
 @Component({
   selector: 'app-tarifas',
@@ -16,12 +23,13 @@ export class TarifasComponent implements OnInit {
   tarifas = signal<Tarifa[]>([]);
   cargando = signal(true);
   error = signal<string | null>(null);
+  errorModal = signal<string | null>(null);
 
   modalAbierto = signal(false);
   tarifaEnEdicion: Tarifa | null = null;
-  formTarifa: Tarifa = this.tarifaVacia();
+  form: FormTarifa = this.formVacio();
 
-  constructor(private tarifaService: TarifaService) {}
+  constructor(private tarifaService: TarifaService) { }
 
   ngOnInit(): void {
     this.cargarTarifas();
@@ -31,7 +39,10 @@ export class TarifasComponent implements OnInit {
     this.cargando.set(true);
     this.tarifaService.listar().subscribe({
       next: (data) => {
-        this.tarifas.set(data);
+        const ordenadas = [...data].sort((a, b) =>
+          (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es'));
+        this.tarifas.set(ordenadas);
+        this.error.set(null);
         this.cargando.set(false);
       },
       error: () => {
@@ -41,24 +52,34 @@ export class TarifasComponent implements OnInit {
     });
   }
 
-  tarifaVacia(): Tarifa {
-    return {
-      tipoServicio: 'CASA' as TipoServicio,
-      zona: 'MADRID' as Zona,
-      precioHora: undefined,
-      precioFijo: undefined
-    };
+  precioDe(t: Tarifa): number {
+    return t.precioFijo ?? t.precioHora ?? 0;
+  }
+
+  unidadDe(t: Tarifa): string {
+    return t.precioFijo != null ? 'servicio' : 'hora';
+  }
+
+  formVacio(): FormTarifa {
+    return { nombre: '', descripcion: '', precio: null, cobro: 'HORA' };
   }
 
   abrirModalCrear(): void {
     this.tarifaEnEdicion = null;
-    this.formTarifa = this.tarifaVacia();
+    this.form = this.formVacio();
+    this.errorModal.set(null);
     this.modalAbierto.set(true);
   }
 
-  abrirModalEditar(tarifa: Tarifa): void {
-    this.tarifaEnEdicion = tarifa;
-    this.formTarifa = { ...tarifa };
+  abrirModalEditar(t: Tarifa): void {
+    this.tarifaEnEdicion = t;
+    this.form = {
+      nombre: t.nombre ?? '',
+      descripcion: t.descripcion ?? '',
+      precio: t.precioFijo ?? t.precioHora ?? null,
+      cobro: t.precioFijo != null ? 'SERVICIO' : 'HORA'
+    };
+    this.errorModal.set(null);
     this.modalAbierto.set(true);
   }
 
@@ -66,32 +87,47 @@ export class TarifasComponent implements OnInit {
     this.modalAbierto.set(false);
   }
 
-  guardarTarifa(): void {
-    if (this.tarifaEnEdicion) {
-      this.tarifaService.actualizar(this.tarifaEnEdicion.id!, this.formTarifa).subscribe({
-        next: () => {
-          this.cerrarModal();
-          this.cargarTarifas();
-        },
-        error: () => this.error.set('No se pudo actualizar la tarifa')
-      });
-    } else {
-      this.tarifaService.crear(this.formTarifa).subscribe({
-        next: () => {
-          this.cerrarModal();
-          this.cargarTarifas();
-        },
-        error: () => this.error.set('No se pudo crear la tarifa')
-      });
+  guardar(): void {
+    const f = this.form;
+
+    if (!f.nombre.trim()) {
+      this.errorModal.set('Escribe el nombre de la tarifa.');
+      return;
     }
+    if (f.precio == null || f.precio <= 0) {
+      this.errorModal.set('El precio tiene que ser mayor que 0.');
+      return;
+    }
+
+    const tarifa: Tarifa = {
+      nombre: f.nombre.trim(),
+      descripcion: f.descripcion.trim() || null,
+      precioHora: f.cobro === 'HORA' ? f.precio : null,
+      precioFijo: f.cobro === 'SERVICIO' ? f.precio : null
+    };
+
+    this.errorModal.set(null);
+
+    const peticion = this.tarifaEnEdicion
+      ? this.tarifaService.actualizar(this.tarifaEnEdicion.id!, tarifa)
+      : this.tarifaService.crear(tarifa);
+
+    peticion.subscribe({
+      next: () => {
+        this.cerrarModal();
+        this.cargarTarifas();
+      },
+      error: () => this.errorModal.set('No se pudo guardar la tarifa. Revisa los datos.')
+    });
   }
 
-  eliminarTarifa(id: number): void {
-    if (!confirm('¿Seguro que quieres eliminar esta tarifa?')) return;
+  eliminar(t: Tarifa): void {
+    if (!confirm(`¿Eliminar la tarifa "${t.nombre}"?`)) return;
 
-    this.tarifaService.eliminar(id).subscribe({
+    this.tarifaService.eliminar(t.id!).subscribe({
       next: () => this.cargarTarifas(),
-      error: () => this.error.set('No se pudo eliminar la tarifa')
+      error: () => this.error.set(
+        'No se pudo eliminar la tarifa. Si hay servicios que la usan, cámbiales la tarifa primero.')
     });
   }
 }

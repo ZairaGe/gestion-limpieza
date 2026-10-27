@@ -28,9 +28,11 @@ public class ServicioResponse {
     private Boolean recurrente;
     private LocalDate fechaPago;
     private BigDecimal precioManual;
+    private Boolean facturado;
     private String notas;
     private BigDecimal importe;
     private Double duracionHoras;
+    private String tarifaNombre;
     private Set<EmpleadoResumen> empleados;
 
     @Data

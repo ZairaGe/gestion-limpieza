@@ -16,14 +16,18 @@ public class Tarifa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "El tipo de servicio es obligatorio")
+    @NotBlank(message = "El nombre es obligatorio")
+    @Column(length = 100)
+    private String nombre;
+
+    @Column(length = 255)
+    private String descripcion;
+
+    // Ya no se usan en la interfaz; se dejan opcionales para no perder los datos antiguos
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private TipoServicio tipoServicio;
 
-    @NotNull(message = "La zona es obligatoria")
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private Zona zona;
 
     @DecimalMin(value = "0.0", inclusive = false, message = "El precio por hora debe ser mayor que 0")

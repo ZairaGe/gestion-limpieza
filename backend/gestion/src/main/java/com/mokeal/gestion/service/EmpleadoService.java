@@ -29,9 +29,14 @@ public class EmpleadoService {
 
     public Empleado actualizar(Long id, Empleado datosNuevos) {
         Empleado empleado = buscarPorId(id);
+
         empleado.setNombre(datosNuevos.getNombre());
+        empleado.setApellido(datosNuevos.getApellido());
+        empleado.setEmail(datosNuevos.getEmail());
+        empleado.setDireccion(datosNuevos.getDireccion());
         empleado.setTelefono(datosNuevos.getTelefono());
         empleado.setActivo(datosNuevos.isActivo());
+
         return empleadoRepository.save(empleado);
     }
 

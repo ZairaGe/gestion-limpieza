@@ -25,7 +25,7 @@ interface FormServicio {
   tarifaId: number | null;
   fecha: string;
   horaInicio: string;
-  horaFin: string;
+  duracion: number | null;
   direccion: string;
   precio: number | null;
   estado: EstadoServicio;
@@ -190,12 +190,7 @@ export class ServiciosComponent implements OnInit {
   }
 
   etiquetaTipo(s: Servicio): string {
-    switch (s.tarifaTipoServicio) {
-      case 'CASA': return 'Limpieza de hogar';
-      case 'OFICINA': return 'Limpieza de oficina';
-      case 'EVENTO': return 'Limpieza de evento';
-      default: return 'Servicio de limpieza';
-    }
+    return s.tarifaNombre ?? 'Servicio de limpieza';
   }
 
   nombresEmpleados(s: Servicio): string {
@@ -214,7 +209,7 @@ export class ServiciosComponent implements OnInit {
       tarifaId: null,
       fecha: this.aFechaLocal(new Date()),
       horaInicio: '09:00',
-      horaFin: '11:00',
+      duracion: 2,
       direccion: '',
       precio: null,
       estado: 'PENDIENTE',
@@ -252,7 +247,7 @@ export class ServiciosComponent implements OnInit {
       tarifaId: servicio.tarifaId,
       fecha: servicio.fecha,
       horaInicio: inicio,
-      horaFin: this.sumarHoras(inicio, duracion),
+      duracion: duracion,
       direccion: servicio.direccion,
       precio: servicio.precioManual ?? null,
       estado: servicio.estado,
@@ -287,23 +282,26 @@ export class ServiciosComponent implements OnInit {
   }
 
   duracionForm(): number {
-    const { horaInicio, horaFin } = this.formServicio;
-    if (!horaInicio || !horaFin) return 0;
-    const [hI, mI] = horaInicio.split(':').map(Number);
-    const [hF, mF] = horaFin.split(':').map(Number);
-    const minutos = (hF * 60 + mF) - (hI * 60 + mI);
-    return minutos > 0 ? minutos / 60 : 0;
+    const d = Number(this.formServicio.duracion);
+    return d > 0 ? d : 0;
   }
 
   horaFinReal(): string {
-    const n = Math.max(1, this.formServicio.empleadoIds.length);
-    return this.sumarHoras(this.formServicio.horaInicio, this.duracionForm() / n);
+    const f = this.formServicio;
+    if (!f.horaInicio || this.duracionForm() === 0) return '';
+    const n = Math.max(1, f.empleadoIds.length);
+    return this.sumarHoras(f.horaInicio, this.duracionForm() / n);
   }
 
+  private cruzaMedianoche(): boolean {
+  const f = this.formServicio;
+  const [h, m] = f.horaInicio.split(':').map(Number);
+  const n = Math.max(1, f.empleadoIds.length);
+  return h * 60 + m + Math.round((this.duracionForm() / n) * 60) >= 24 * 60;
+}
+
   etiquetaTarifa(t: Tarifa): string {
-    const tipos: Record<string, string> = { CASA: 'Hogar', OFICINA: 'Oficina', EVENTO: 'Evento' };
-    const zona = t.zona === 'MADRID' ? 'Madrid' : 'Fuera de Madrid';
-    return `${tipos[t.tipoServicio] ?? t.tipoServicio} · ${zona}`;
+    return t.nombre;
   }
 
   cerrarModal(): void {
@@ -349,7 +347,9 @@ export class ServiciosComponent implements OnInit {
     if (!f.clienteId) { this.errorModal.set('Selecciona un cliente.'); return; }
     if (!f.direccion.trim()) { this.errorModal.set('Escribe la dirección del servicio.'); return; }
     if (!f.fecha) { this.errorModal.set('Elige la fecha.'); return; }
-    if (duracion <= 0) { this.errorModal.set('La hora de fin tiene que ser posterior a la de inicio.'); return; }
+    if (!f.horaInicio) { this.errorModal.set('Indica la hora de inicio.'); return; }
+    if (duracion <= 0) { this.errorModal.set('Indica cuántas horas dura el servicio.'); return; }
+    if (this.cruzaMedianoche()) { this.errorModal.set('El servicio no puede acabar pasada la medianoche.'); return; }
 
     const recurrente = f.recurrente && !this.servicioEnEdicion;
     if (recurrente) {
@@ -363,6 +363,7 @@ export class ServiciosComponent implements OnInit {
     const request: ServicioRequest = {
       clienteId: f.clienteId,
       tarifaId: f.tarifaId,
+      tarifaNombre: this.tarifas().find(t => t.id === f.tarifaId)?.nombre ?? null,
       direccion: f.direccion.trim(),
       fecha: f.fecha,
       horaInicio: f.horaInicio,

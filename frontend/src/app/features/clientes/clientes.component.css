@@ -3,6 +3,8 @@
   color: #101828;
 }
 
+/* Cabecera y búsqueda */
+
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -92,11 +94,13 @@
 .empty-state {
   background: #fff;
   border: 1px solid #e0e5ed;
-  border-radius: 22px;
+  border-radius: 20px;
   padding: 3rem;
   text-align: center;
   color: #667085;
 }
+
+/* Tabla de clientes */
 
 .table-card {
   background: #fff;
@@ -145,36 +149,55 @@ tbody tr:hover {
   background: #f8faff;
 }
 
+.name-cell {
+  color: #101828;
+  font-weight: 400;
+}
+
+.address-cell {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .contact-cell {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
 }
 
-.contact-icon,
-.location-icon {
+.contact-cell svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #667085;
+}
+
+.contact-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #667085;
-  font-size: 1.2rem;
+  font-size: 1rem;
+}
+
+.th-actions {
+  width: 125px;
+  text-align: right;
 }
 
 .acciones {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.8rem;
-}
-
-.th-actions {
-  width: 85px;
+  gap: 0.5rem;
 }
 
 .btn-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   width: 32px;
   height: 32px;
   padding: 5px;
@@ -191,7 +214,8 @@ tbody tr:hover {
   height: 21px;
 }
 
-.btn-icon:hover {
+.btn-icon:hover,
+.btn-view:hover {
   background: #eaf1ff;
   color: #477fe8;
 }
@@ -201,89 +225,342 @@ tbody tr:hover {
   color: #dc2626;
 }
 
-/* Modal */
+/* Fondo y estructura común de los modales */
 
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: #10182840;
-  backdrop-filter: blur(4px);
+  background: #10182866;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.25rem;
   z-index: 100;
+  overflow-y: auto;
 }
+
 
 .modal {
   box-sizing: border-box;
   background: #fff;
-  border: 1px solid #e0e5ed;
-  border-radius: 20px;
-  padding: 2rem;
+  border: 1px solid #e5eaf2;
+  border-radius: 22px;
   width: 100%;
-  max-width: 460px;
-  max-height: 90vh;
+  max-height: calc(100vh - 2.5rem);
+  overflow-x: hidden;
   overflow-y: auto;
-  box-shadow: 0 15px 50px #10182820;
+  box-shadow: 0 24px 70px #10182830;
+  animation: modal-entrada 0.18s ease-out;
 }
 
-.modal h2 {
-  margin: 0 0 1.5rem;
+.modal-form {
+  max-width: 700px;
+}
+
+.modal-ficha {
+  max-width: 620px;
+}
+
+
+.address-details {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.field-help {
+  display: block;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+
+@keyframes modal-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.65rem 1.8rem;
+  border-bottom: 1px solid #edf0f5;
+  background: linear-gradient(135deg, #f7faff 0%, #fff 100%);
+}
+
+.modal-heading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.modal-heading h2 {
+  margin: 0;
   color: #101828;
-  font-size: 1.4rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.modal-heading p {
+  margin: 0.35rem 0 0;
+  color: #667085;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.modal-symbol,
+.avatar-cliente {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  background: #eaf1ff;
+  color: #4d82ed;
+}
+
+.modal-symbol svg {
+  width: 25px;
+  height: 25px;
+}
+
+.btn-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #667085;
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-close:hover {
+  background: #edf1f7;
+  color: #101828;
+}
+
+/* Formulario de crear y editar */
+
+.modal-form form {
+  padding: 1.6rem 1.8rem 1.8rem;
+}
+
+.form-section+.form-section {
+  margin-top: 1.65rem;
+}
+
+.form-section h3 {
+  margin: 0 0 1.1rem;
+  color: #344054;
+  font-size: 0.91rem;
+  font-weight: 700;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.1rem 1rem;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.form-full {
+  grid-column: 1 / -1;
 }
 
 .form-group label {
   display: block;
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   color: #344054;
-  margin-bottom: 0.4rem;
+  font-weight: 600;
+  margin-bottom: 0.45rem;
+}
+
+.required {
+  color: #e05252;
 }
 
 .form-group input,
 .form-group select {
   box-sizing: border-box;
   width: 100%;
-  padding: 0.75rem 0.85rem;
-  border: 1px solid #d0d5dd;
-  border-radius: 10px;
+  min-height: 44px;
+  padding: 0.72rem 0.85rem;
+  border: 1px solid #dfe4ec;
+  border-radius: 11px;
   background: #fff;
   color: #101828;
-  font-size: 0.95rem;
+  font-family: inherit;
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.form-group input::placeholder {
+  color: #a0a9b8;
+}
+
+.form-group input:hover,
+.form-group select:hover {
+  border-color: #b8c6dc;
 }
 
 .form-group input:focus,
 .form-group select:focus {
-  outline: none;
   border-color: #6495f9;
   box-shadow: 0 0 0 3px #6495f91c;
 }
 
+/* Botones de los modales */
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.8rem;
-  margin-top: 1.5rem;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1.8rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #edf0f5;
+}
+
+.modal-actions .btn-primary {
+  min-height: 43px;
+  padding: 0.75rem 1.2rem;
+  border-radius: 11px;
 }
 
 .btn-secondary {
-  background: #f2f4f7;
-  color: #344054;
-  border: none;
-  padding: 0.75rem 1.2rem;
-  border-radius: 10px;
+  min-height: 43px;
+  background: #fff;
+  color: #475467;
+  border: 1px solid #dfe4ec;
+  padding: 0.7rem 1.15rem;
+  border-radius: 11px;
   font-weight: 600;
+  font-size: 0.92rem;
   cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .btn-secondary:hover {
-  background: #e4e7ec;
+  background: #f8faff;
+  border-color: #cbd5e1;
 }
+
+/* Ficha de consulta del cliente */
+
+.modal-ficha {
+  padding-bottom: 0.25rem;
+}
+
+.ficha-identidad {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1.45rem 1.8rem;
+  background: #fff;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.ficha-identidad h3 {
+  margin: 0;
+  color: #101828;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.tipo-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 20px;
+  background: #edf3ff;
+  color: #4775cc;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.ficha-section {
+  padding: 1.3rem 1.8rem 0;
+}
+
+.ficha-section h4 {
+  margin: 0 0 0.95rem;
+  color: #667085;
+  font-size: 0.77rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+}
+
+.ficha-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.ficha-dato {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #edf0f5;
+  border-radius: 12px;
+  background: #fbfcfe;
+}
+
+.ficha-dato span {
+  color: #667085;
+  font-size: 0.79rem;
+}
+
+.ficha-dato strong {
+  color: #101828;
+  font-size: 0.91rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ficha-email {
+  word-break: break-word;
+}
+
+.modal-ficha>.modal-actions {
+  margin: 1.5rem 1.8rem 1.4rem;
+}
+
+/* Adaptación a móvil */
 
 @media (max-width: 700px) {
   .page-header {
@@ -307,7 +584,104 @@ tbody tr:hover {
     padding: 0.9rem;
   }
 
+  .modal-overlay {
+    align-items: center;
+    padding: 0.75rem;
+  }
+
   .modal {
-    padding: 1.4rem;
+    max-height: calc(100vh - 1.5rem);
+    border-radius: 18px;
+  }
+
+  .modal-header {
+    padding: 1.25rem;
+  }
+
+  .modal-heading {
+    gap: 0.75rem;
+  }
+
+  .modal-heading h2 {
+    font-size: 1.15rem;
+  }
+
+  .modal-heading p {
+    font-size: 0.82rem;
+  }
+
+  .modal-symbol,
+  .avatar-cliente {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+
+  .modal-form form {
+    padding: 1.3rem 1.25rem 1.4rem;
+  }
+
+  .form-grid {
+    gap: 0.95rem;
+  }
+
+  .ficha-identidad {
+    padding: 1.2rem 1.25rem;
+  }
+
+  .ficha-section {
+    padding: 1.2rem 1.25rem 0;
+  }
+
+  .modal-ficha>.modal-actions {
+    margin: 1.3rem 1.25rem 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    gap: 0.6rem;
+  }
+
+  .page-header p {
+    font-size: 0.88rem;
+  }
+
+  .page-header .btn-primary {
+    gap: 0.35rem;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.88rem;
+  }
+
+  .form-grid,
+  .ficha-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form-full {
+    grid-column: auto;
+  }
+
+  .modal-actions {
+    gap: 0.5rem;
+  }
+
+  .modal-actions .btn-primary,
+  .btn-secondary {
+    padding: 0.7rem 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal {
+    animation: none;
+  }
+
+  .btn-primary,
+  .btn-icon,
+  .btn-secondary,
+  .btn-close {
+    transition: none;
   }
 }

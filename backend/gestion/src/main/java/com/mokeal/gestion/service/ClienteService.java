@@ -30,9 +30,12 @@ public class ClienteService {
     public Cliente actualizar(Long id, Cliente datosNuevos) {
         Cliente cliente = buscarPorId(id);
         cliente.setNombre(datosNuevos.getNombre());
+        cliente.setApellido(datosNuevos.getApellido());
+        cliente.setCodigoPostal(null);
         cliente.setTelefono(datosNuevos.getTelefono());
         cliente.setEmail(datosNuevos.getEmail());
         cliente.setDireccion(datosNuevos.getDireccion());
+        cliente.setDetallesDireccion(datosNuevos.getDetallesDireccion());
         cliente.setNif(datosNuevos.getNif());
         cliente.setCodigoPostal(datosNuevos.getCodigoPostal());
         cliente.setTipo(datosNuevos.getTipo());
