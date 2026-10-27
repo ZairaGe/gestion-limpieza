@@ -55,6 +55,7 @@ export class ClientesComponent implements OnInit {
       telefono: '',
       email: '',
       direccion: '',
+      detallesDireccion: '',
       codigoPostal: '',
       tipo: 'PARTICULAR' as TipoCliente,
       nif: ''
@@ -143,6 +144,7 @@ export class ClientesComponent implements OnInit {
         cliente.telefono,
         cliente.email,
         cliente.direccion,
+        cliente.detallesDireccion,
         cliente.codigoPostal,
         cliente.nif,
         cliente.tipo

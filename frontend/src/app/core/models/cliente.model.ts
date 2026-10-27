@@ -7,6 +7,7 @@ export interface Cliente {
   telefono?: string;
   email?: string;
   direccion?: string;
+  detallesDireccion?: string;
   codigoPostal?: string;
   tipo: TipoCliente;
   nif?: string;

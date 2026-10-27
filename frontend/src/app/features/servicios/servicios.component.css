@@ -158,16 +158,52 @@ td {
   font-size: 0.95rem;
   vertical-align: middle;
 }
+
 /* Ancho de las columnas */
-th:nth-child(1), td:nth-child(1) { width: 14%; }
-th:nth-child(2), td:nth-child(2) { width: 9%; }
-th:nth-child(3), td:nth-child(3) { width: 10%; }
-th:nth-child(4), td:nth-child(4) { width: 8%; }
-th:nth-child(5), td:nth-child(5) { width: 15%; }
-th:nth-child(6), td:nth-child(6) { width: 13%; }
-th:nth-child(7), td:nth-child(7) { width: 9%; }
-th:nth-child(8), td:nth-child(8) { width: 13%; }
-th:nth-child(9), td:nth-child(9) { width: 9%; }
+th:nth-child(1),
+td:nth-child(1) {
+  width: 14%;
+}
+
+th:nth-child(2),
+td:nth-child(2) {
+  width: 9%;
+}
+
+th:nth-child(3),
+td:nth-child(3) {
+  width: 10%;
+}
+
+th:nth-child(4),
+td:nth-child(4) {
+  width: 8%;
+}
+
+th:nth-child(5),
+td:nth-child(5) {
+  width: 15%;
+}
+
+th:nth-child(6),
+td:nth-child(6) {
+  width: 13%;
+}
+
+th:nth-child(7),
+td:nth-child(7) {
+  width: 9%;
+}
+
+th:nth-child(8),
+td:nth-child(8) {
+  width: 13%;
+}
+
+th:nth-child(9),
+td:nth-child(9) {
+  width: 9%;
+}
 
 tbody tr:last-child td {
   border-bottom: none;
@@ -224,10 +260,25 @@ tbody tr:hover {
   pointer-events: none;
 }
 
-.estado-pendiente { background: #fef3c7; color: #b7791f; }
-.estado-confirmado { background: #e0ecff; color: #4a7de0; }
-.estado-completado { background: #dcfce7; color: #16a34a; }
-.estado-cancelado { background: #fee2e2; color: #ef4444; }
+.estado-pendiente {
+  background: #fef3c7;
+  color: #b7791f;
+}
+
+.estado-confirmado {
+  background: #e0ecff;
+  color: #4a7de0;
+}
+
+.estado-completado {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.estado-cancelado {
+  background: #fee2e2;
+  color: #ef4444;
+}
 
 /* Acciones */
 .acciones {
@@ -320,6 +371,17 @@ tbody tr:hover {
   grid-template-columns: 2fr 1fr 1fr;
 }
 
+.fila-4 {
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+}
+
+.campo-calculado {
+  background: #f4f6fb;
+  box-shadow: none;
+  font-weight: 600;
+  cursor: default;
+}
+
 .campo {
   margin-bottom: 1rem;
 }
@@ -328,9 +390,9 @@ tbody tr:hover {
   margin-bottom: 0.2rem;
 }
 
-.fila + .campo,
-.fila + .fila,
-.hint-horario + .campo {
+.fila+.campo,
+.fila+.fila,
+.hint-horario+.campo {
   margin-top: 1rem;
 }
 
@@ -494,4 +556,3 @@ tbody tr:hover {
   font-weight: 500;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
-

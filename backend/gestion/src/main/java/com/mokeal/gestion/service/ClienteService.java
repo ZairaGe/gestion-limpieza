@@ -35,6 +35,7 @@ public class ClienteService {
         cliente.setTelefono(datosNuevos.getTelefono());
         cliente.setEmail(datosNuevos.getEmail());
         cliente.setDireccion(datosNuevos.getDireccion());
+        cliente.setDetallesDireccion(datosNuevos.getDetallesDireccion());
         cliente.setNif(datosNuevos.getNif());
         cliente.setCodigoPostal(datosNuevos.getCodigoPostal());
         cliente.setTipo(datosNuevos.getTipo());

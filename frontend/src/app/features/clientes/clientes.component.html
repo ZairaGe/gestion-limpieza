@@ -85,21 +85,31 @@
           }
         </td>
 
+
         <td class="address-cell">
-          @if (cliente.direccion) {
+          @if (cliente.direccion || cliente.detallesDireccion) {
           <span class="contact-cell">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
-              <path d="M20 10c0 5-8 12-8 12S4 15 4 10
-          a8 8 0 1 1 16 0Z" />
+              <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
               <circle cx="12" cy="10" r="2.5" />
             </svg>
-            {{ cliente.direccion }}
+
+            <span>
+              <span>{{ cliente.direccion || '—' }}</span>
+
+              @if (cliente.detallesDireccion) {
+              <small class="address-details">
+                {{ cliente.detallesDireccion }}
+              </small>
+              }
+            </span>
           </span>
           } @else {
           —
           }
         </td>
+
 
         <td>
           <div class="acciones">
@@ -216,11 +226,23 @@
               autocomplete="email" />
           </div>
 
+
           <div class="form-group form-full">
-            <label for="direccion">Dirección</label>
+            <label for="direccion">Dirección (calle y número)</label>
             <input id="direccion" type="text" [(ngModel)]="formCliente.direccion" name="direccion"
-              placeholder="Calle, número, piso..." autocomplete="street-address" />
+              placeholder="Ej. Calle de Alcalá, 120" autocomplete="address-line1" />
           </div>
+
+          <div class="form-group form-full">
+            <label for="detallesDireccion">Detalles de dirección</label>
+            <input id="detallesDireccion" type="text" [(ngModel)]="formCliente.detallesDireccion"
+              name="detallesDireccion" placeholder="Ej. Portal 2, 3.º B, escalera izquierda"
+              autocomplete="address-line2" />
+            <small class="field-help">
+              Portal, escalera, planta, puerta u otras indicaciones.
+            </small>
+          </div>
+
 
           <div class="form-group">
             <label for="codigoPostal">Código postal</label>
@@ -314,10 +336,16 @@
     <div class="ficha-section">
       <h4>Dirección</h4>
 
+
       <div class="ficha-grid">
         <div class="ficha-dato">
-          <span>Dirección completa</span>
+          <span>Calle y número</span>
           <strong>{{ cliente.direccion || '—' }}</strong>
+        </div>
+
+        <div class="ficha-dato">
+          <span>Detalles de dirección</span>
+          <strong>{{ cliente.detallesDireccion || '—' }}</strong>
         </div>
 
         <div class="ficha-dato">
@@ -325,6 +353,7 @@
           <strong>{{ cliente.codigoPostal || '—' }}</strong>
         </div>
       </div>
+
     </div>
 
     <div class="modal-actions">
