@@ -29,6 +29,9 @@ public class Empleado {
     @Column(length = 255)
     private String direccion;
 
+    @Column(length = 255)
+    private String datosEmergencia;
+
     @Column(length = 20)
     private String telefono;
 

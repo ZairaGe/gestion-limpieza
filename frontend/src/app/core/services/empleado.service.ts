@@ -9,7 +9,7 @@ export class EmpleadoService {
 
   private apiUrl = `${environment.apiUrl}/empleados`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   listar(): Observable<Empleado[]> {
     return this.http.get<Empleado[]>(this.apiUrl);
@@ -29,5 +29,20 @@ export class EmpleadoService {
 
   eliminar(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  descargarResumenMensual(id: number, mes: string, nombre: string): void {
+    this.http.get(`${this.apiUrl}/${id}/resumen-mensual`, {
+      params: { mes },
+      responseType: 'blob'
+    }).subscribe(pdfBlob => {
+      const limpio = nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_');
+      const url = window.URL.createObjectURL(pdfBlob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = `resumen_${limpio}_${mes}.pdf`;
+      enlace.click();
+      window.URL.revokeObjectURL(url);
+    });
   }
 }

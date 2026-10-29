@@ -1,0 +1,80 @@
+<div class="overlay" (click)="cerrar.emit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <div class="cabecera">
+      <h2>Mes por trabajador</h2>
+      <button type="button" class="cerrar" (click)="cerrar.emit()" aria-label="Cerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="controles">
+      <div class="campo">
+        <label>Trabajador</label>
+        <select [ngModel]="empleadoId()" (ngModelChange)="cambiarEmpleado($event)">
+          @for (e of empleados(); track e.id) {
+            <option [ngValue]="e.id">{{ e.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="campo">
+        <label>Mes</label>
+        <input type="month" [ngModel]="mes()" (ngModelChange)="cambiarMes($event)" />
+      </div>
+
+      <button type="button" class="btn-descarga" [disabled]="!puedeDescargar()" (click)="descargar()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+        Descargar PDF
+      </button>
+    </div>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <div class="totales">
+      <div class="total">
+        <span class="etiqueta">Horas trabajadas · Completados</span>
+        <span class="valor">{{ textoHoras(minutosTrabajados()) }}</span>
+      </div>
+      <div class="total">
+        <span class="etiqueta">Horas programadas · Sin cancelados</span>
+        <span class="valor">{{ textoHoras(minutosProgramados()) }}</span>
+      </div>
+    </div>
+
+    @if (cargando()) {
+      <p class="vacio">Cargando servicios...</p>
+    } @else if (filas().length === 0) {
+      <p class="vacio">Este trabajador no tiene servicios en este mes.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Horario</th>
+            <th>Duración</th>
+            <th>Cliente</th>
+            <th>Dirección</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filas(); track f.id) {
+            <tr>
+              <td>{{ f.fecha }}</td>
+              <td>{{ f.horario }}</td>
+              <td>{{ textoDuracion(f.minutos) }}</td>
+              <td>{{ f.cliente }}</td>
+              <td>{{ f.direccion }}</td>
+              <td>
+                <span class="pill" [ngClass]="'pill-' + f.estado.toLowerCase()">{{ etiquetasEstado[f.estado] }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</div>

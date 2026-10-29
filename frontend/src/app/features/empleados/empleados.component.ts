@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmpleadoService } from '../../core/services/empleado.service';
 import { Empleado } from '../../core/models/empleado.model';
+import { MesEmpleadoModalComponent } from './mes-empleado-modal/mes-empleado-modal.component';
 
 @Component({
   selector: 'app-empleados',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MesEmpleadoModalComponent],
   templateUrl: './empleados.component.html',
   styleUrl: './empleados.component.css'
 })
@@ -18,6 +19,9 @@ export class EmpleadosComponent implements OnInit {
   cargando = signal(true);
   error = signal<string | null>(null);
   busqueda = signal('');
+  modalMesAbierto = signal(false);
+  fichaAbierta = signal(false);
+  empleadoEnFicha: Empleado | null = null;
 
   empleadosFiltrados = computed(() => {
     const texto = this.busqueda().trim().toLowerCase();
@@ -123,4 +127,26 @@ export class EmpleadosComponent implements OnInit {
       error: () => this.error.set('No se pudo eliminar el empleado')
     });
   }
+
+  verFicha(empleado: Empleado): void {
+    this.empleadoEnFicha = empleado;
+    this.fichaAbierta.set(true);
+  }
+
+  cerrarFicha(): void {
+    this.fichaAbierta.set(false);
+    this.empleadoEnFicha = null;
+  }
+
+
+  abrirEdicionDesdeFicha(): void {
+    if (!this.empleadoEnFicha) {
+      return;
+    }
+
+    const empleado = this.empleadoEnFicha;
+    this.cerrarFicha();
+    this.abrirModalEditar(empleado);
+  }
+
 }

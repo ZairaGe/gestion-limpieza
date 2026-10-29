@@ -5,5 +5,6 @@ export interface Empleado {
   telefono?: string;
   email?: string;
   direccion?: string;
+  datosEmergencia?: string;
   activo: boolean;
 }

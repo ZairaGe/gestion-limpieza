@@ -34,6 +34,7 @@ public class EmpleadoService {
         empleado.setApellido(datosNuevos.getApellido());
         empleado.setEmail(datosNuevos.getEmail());
         empleado.setDireccion(datosNuevos.getDireccion());
+        empleado.setDatosEmergencia(datosNuevos.getDatosEmergencia());
         empleado.setTelefono(datosNuevos.getTelefono());
         empleado.setActivo(datosNuevos.isActivo());
 
