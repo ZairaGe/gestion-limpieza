@@ -147,181 +147,225 @@
 </div>
 }
 
+
 @if (modalAbierto()) {
 <div class="modal-overlay" (click)="cerrarModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <h2>{{ empleadoEnEdicion ? 'Editar empleado' : 'Nuevo empleado' }}</h2>
+  <section class="modal modal-form" role="dialog" aria-modal="true" aria-labelledby="form-modal-title"
+    (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-heading">
+        <div class="modal-symbol">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="10" cy="7" r="4" />
+            <path d="M20 8v6M23 11h-6" />
+          </svg>
+        </div>
+
+        <div>
+          <h2 id="form-modal-title">
+            {{ empleadoEnEdicion ? 'Editar empleado' : 'Nuevo empleado' }}
+          </h2>
+          <p>Completa los datos personales y de contacto del empleado.</p>
+        </div>
+      </div>
+
+      <button type="button" class="btn-close" aria-label="Cerrar" (click)="cerrarModal()">×</button>
+    </div>
 
     <form (ngSubmit)="guardarEmpleado()">
-      <div class="form-group">
-        <label>Nombre</label>
-        <input type="text" [(ngModel)]="formEmpleado.nombre" name="nombre" required />
+
+      <div class="form-section">
+        <h3>Información personal</h3>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="nombre">Nombre <span class="required">*</span></label>
+            <input id="nombre" type="text" [(ngModel)]="formEmpleado.nombre" name="nombre"
+              placeholder="Nombre del empleado" autocomplete="given-name" required />
+          </div>
+
+          <div class="form-group">
+            <label for="apellido">Apellidos</label>
+            <input id="apellido" type="text" [(ngModel)]="formEmpleado.apellido" name="apellido" placeholder="Apellidos"
+              autocomplete="family-name" />
+          </div>
+
+          <div class="form-group form-full">
+            <label for="activo">Estado del empleado</label>
+            <select id="activo" [(ngModel)]="formEmpleado.activo" name="activo">
+              <option [ngValue]="true">Activo</option>
+              <option [ngValue]="false">Inactivo</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label>Apellido</label>
-        <input type="text" [(ngModel)]="formEmpleado.apellido" name="apellido" />
+      <div class="form-section">
+        <h3>Datos de contacto</h3>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="telefono">Teléfono</label>
+            <input id="telefono" type="tel" [(ngModel)]="formEmpleado.telefono" name="telefono"
+              placeholder="Número de teléfono" autocomplete="tel" />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <input id="email" type="email" [(ngModel)]="formEmpleado.email" name="email"
+              placeholder="correo@ejemplo.com" autocomplete="email" />
+          </div>
+
+          <div class="form-group form-full">
+            <label for="direccion">Dirección</label>
+            <input id="direccion" type="text" [(ngModel)]="formEmpleado.direccion" name="direccion"
+              placeholder="Ej. Calle de Alcalá, 120" autocomplete="street-address" />
+          </div>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label>Teléfono</label>
-        <input type="text" [(ngModel)]="formEmpleado.telefono" name="telefono" />
-      </div>
+      <div class="form-section">
+        <h3>Datos de emergencia</h3>
 
-      <div class="form-group">
-        <label>Correo electrónico</label>
-        <input type="email" [(ngModel)]="formEmpleado.email" name="email" />
-      </div>
-
-      <div class="form-group">
-        <label>Dirección</label>
-        <input type="text" [(ngModel)]="formEmpleado.direccion" name="direccion" />
-      </div>
-
-      <div class="form-group">
-        <label>Datos de emergencia</label>
-        <input type="text" [(ngModel)]="formEmpleado.datosEmergencia" name="datosEmergencia"
-          placeholder="Contacto de emergencia y teléfono" />
-      </div>
-
-      <div class="form-group checkbox-group">
-        <label class="checkbox-label">
-          <input type="checkbox" [(ngModel)]="formEmpleado.activo" name="activo" />
-          Empleado activo
-        </label>
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label for="datosEmergencia">Contacto de emergencia y teléfono</label>
+            <input id="datosEmergencia" type="text" [(ngModel)]="formEmpleado.datosEmergencia" name="datosEmergencia"
+              placeholder="Nombre y teléfono de contacto" />
+            <small class="field-help">
+              Persona de contacto en caso de emergencia.
+            </small>
+          </div>
+        </div>
       </div>
 
       <div class="modal-actions">
         <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
-        <button type="submit" class="btn-primary">Guardar</button>
+
+        <button type="submit" class="btn-primary">
+          {{ empleadoEnEdicion ? 'Guardar cambios' : 'Crear empleado' }}
+        </button>
       </div>
+
     </form>
-  </div>
+  </section>
 </div>
 }
+
 @if (modalMesAbierto()) {
 <app-mes-empleado-modal (cerrar)="modalMesAbierto.set(false)"></app-mes-empleado-modal>
 }
 
 
 @if (fichaAbierta() && empleadoEnFicha; as ficha) {
-  <div class="modal-overlay ficha-overlay" (click)="cerrarFicha()">
-    <div class="modal modal-ficha-cliente" (click)="$event.stopPropagation()">
+<div class="modal-overlay ficha-overlay" (click)="cerrarFicha()">
+  <div class="modal modal-ficha-cliente" (click)="$event.stopPropagation()">
 
-      <!-- Cabecera -->
-      <div class="ficha-cliente-header">
-        <div class="ficha-avatar">
-          {{ empleadoEnFicha.nombre.charAt(0).toUpperCase() || 'E' }}
+    <!-- Cabecera -->
+    <div class="ficha-cliente-header">
+      <div class="ficha-avatar">
+        {{ empleadoEnFicha.nombre.charAt(0).toUpperCase() || 'E' }}
+      </div>
+
+      <div class="ficha-titulo">
+        <h2>Ficha del empleado</h2>
+        <p>Información personal y de contacto.</p>
+      </div>
+
+      <button type="button" class="ficha-cerrar" aria-label="Cerrar ficha" (click)="cerrarFicha()">
+        &times;
+      </button>
+    </div>
+
+    <!-- Identidad -->
+    <div class="ficha-identidad">
+      <h3>
+        {{ empleadoEnFicha.nombre }}
+        {{ empleadoEnFicha.apellido || '' }}
+      </h3>
+
+      <span class="ficha-estado" [class.ficha-estado-inactivo]="!empleadoEnFicha.activo">
+        {{ empleadoEnFicha.activo ? 'Activo' : 'Inactivo' }}
+      </span>
+    </div>
+
+    <!-- Datos personales -->
+    <div class="ficha-contenido">
+
+      <section class="ficha-seccion">
+        <h4>DATOS PERSONALES</h4>
+
+        <div class="ficha-grid">
+          <div class="ficha-tarjeta">
+            <span>Nombre</span>
+            <strong>{{ empleadoEnFicha.nombre || '—' }}</strong>
+          </div>
+
+          <div class="ficha-tarjeta">
+            <span>Apellidos</span>
+            <strong>{{ empleadoEnFicha.apellido || '—' }}</strong>
+          </div>
+
         </div>
+      </section>
 
-        <div class="ficha-titulo">
-          <h2>Ficha del empleado</h2>
-          <p>Información personal y de contacto.</p>
+      <!-- Contacto -->
+      <section class="ficha-seccion">
+        <h4>CONTACTO</h4>
+
+        <div class="ficha-grid">
+          <div class="ficha-tarjeta">
+            <span>Teléfono</span>
+            <strong>{{ empleadoEnFicha.telefono || '—' }}</strong>
+          </div>
+
+          <div class="ficha-tarjeta">
+            <span>Correo electrónico</span>
+            <strong>{{ empleadoEnFicha.email || '—' }}</strong>
+          </div>
         </div>
+      </section>
 
-        <button
-          type="button"
-          class="ficha-cerrar"
-          aria-label="Cerrar ficha"
-          (click)="cerrarFicha()">
-          &times;
-        </button>
-      </div>
+      <!-- Dirección -->
+      <section class="ficha-seccion">
+        <h4>DIRECCIÓN</h4>
 
-      <!-- Identidad -->
-      <div class="ficha-identidad">
-        <h3>
-          {{ empleadoEnFicha.nombre }}
-          {{ empleadoEnFicha.apellido || '' }}
-        </h3>
-
-        <span
-          class="ficha-estado"
-          [class.ficha-estado-inactivo]="!empleadoEnFicha.activo">
-          {{ empleadoEnFicha.activo ? 'Activo' : 'Inactivo' }}
-        </span>
-      </div>
-
-      <!-- Datos personales -->
-      <div class="ficha-contenido">
-
-        <section class="ficha-seccion">
-          <h4>DATOS PERSONALES</h4>
-
-          <div class="ficha-grid">
-            <div class="ficha-tarjeta">
-              <span>Nombre</span>
-              <strong>{{ empleadoEnFicha.nombre || '—' }}</strong>
-            </div>
-
-            <div class="ficha-tarjeta">
-              <span>Apellidos</span>
-              <strong>{{ empleadoEnFicha.apellido || '—' }}</strong>
-            </div>
-
+        <div class="ficha-grid">
+          <div class="ficha-tarjeta ficha-tarjeta-completa">
+            <span>Dirección</span>
+            <strong>{{ empleadoEnFicha.direccion || '—' }}</strong>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- Contacto -->
-        <section class="ficha-seccion">
-          <h4>CONTACTO</h4>
+      <!-- Emergencias -->
+      <section class="ficha-seccion">
+        <h4>DATOS DE EMERGENCIA</h4>
 
-          <div class="ficha-grid">
-            <div class="ficha-tarjeta">
-              <span>Teléfono</span>
-              <strong>{{ empleadoEnFicha.telefono || '—' }}</strong>
-            </div>
-
-            <div class="ficha-tarjeta">
-              <span>Correo electrónico</span>
-              <strong>{{ empleadoEnFicha.email || '—' }}</strong>
-            </div>
+        <div class="ficha-grid">
+          <div class="ficha-tarjeta ficha-tarjeta-completa">
+            <span>Contacto de emergencia y teléfono</span>
+            <strong>{{ empleadoEnFicha.datosEmergencia || '—' }}</strong>
           </div>
-        </section>
-
-        <!-- Dirección -->
-        <section class="ficha-seccion">
-          <h4>DIRECCIÓN</h4>
-
-          <div class="ficha-grid">
-            <div class="ficha-tarjeta ficha-tarjeta-completa">
-              <span>Dirección</span>
-              <strong>{{ empleadoEnFicha.direccion || '—' }}</strong>
-            </div>
-          </div>
-        </section>
-
-        <!-- Emergencias -->
-        <section class="ficha-seccion">
-          <h4>DATOS DE EMERGENCIA</h4>
-
-          <div class="ficha-grid">
-            <div class="ficha-tarjeta ficha-tarjeta-completa">
-              <span>Contacto de emergencia y teléfono</span>
-              <strong>{{ empleadoEnFicha.datosEmergencia || '—' }}</strong>
-            </div>
-          </div>
-        </section>
-
-      </div>
-
-      <!-- Acciones -->
-      <div class="ficha-pie">
-        <button
-          type="button"
-          class="btn-secondary"
-          (click)="cerrarFicha()">
-          Cerrar
-        </button>
-
-        <button
-          type="button"
-          class="btn-primary"
-          (click)="abrirEdicionDesdeFicha()">
-          Editar empleado
-        </button>
-      </div>
+        </div>
+      </section>
 
     </div>
+
+    <!-- Acciones -->
+    <div class="ficha-pie">
+      <button type="button" class="btn-secondary" (click)="cerrarFicha()">
+        Cerrar
+      </button>
+
+      <button type="button" class="btn-primary" (click)="abrirEdicionDesdeFicha()">
+        Editar empleado
+      </button>
+    </div>
+
   </div>
+</div>
 }
