@@ -175,21 +175,24 @@ export class DistribucionComponent implements OnInit {
   // ---------- Descargas ----------
 
   descargarMes(): void {
+    this.error.set(null);
     const d = this.deIso(this.diaSeleccionado());
     const desde = this.aIso(new Date(d.getFullYear(), d.getMonth(), 1));
     const hasta = this.aIso(new Date(d.getFullYear(), d.getMonth() + 1, 0));
-    this.planningService.descargarPlanningGeneral(desde, hasta);
+    this.planningService.descargarPlanningGeneral(desde, hasta, m => this.error.set(m));
   }
 
   descargarSemanaPorTrabajador(): void {
     const dias = this.dias();
     if (dias.length === 0) return;
-    this.planningService.descargarPorTrabajador(dias[0].fecha, dias[dias.length - 1].fecha);
+    this.error.set(null);
+    this.planningService.descargarPorTrabajador(dias[0].fecha, dias[dias.length - 1].fecha, m => this.error.set(m));
   }
 
   descargarDiaPorTrabajador(): void {
+    this.error.set(null);
     const dia = this.diaSeleccionado();
-    this.planningService.descargarPorTrabajador(dia, dia);
+    this.planningService.descargarPorTrabajador(dia, dia, m => this.error.set(m));
   }
 
   // ---------- Asignar trabajadores ----------

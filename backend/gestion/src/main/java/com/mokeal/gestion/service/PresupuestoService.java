@@ -169,7 +169,21 @@ public class PresupuestoService {
 
         private String generarNumero() {
                 String anio = String.valueOf(Year.now().getValue());
-                long siguiente = presupuestoRepository.contarPorAnio(anio) + 1;
+                String prefijo = "PRE-" + anio + "-";
+
+                Presupuesto ultimo = presupuestoRepository
+                                .findFirstByNumeroStartingWithOrderByNumeroDesc(prefijo)
+                                .orElse(null);
+
+                long siguiente = 1;
+
+                if (ultimo != null) {
+                        String numeroActual = ultimo.getNumero();
+                        String parteNumerica = numeroActual.substring(prefijo.length());
+
+                        siguiente = Long.parseLong(parteNumerica) + 1;
+                }
+
                 return String.format("PRE-%s-%03d", anio, siguiente);
         }
 

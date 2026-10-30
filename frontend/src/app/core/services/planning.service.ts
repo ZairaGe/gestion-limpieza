@@ -9,45 +9,42 @@ export class PlanningService {
 
   constructor(private http: HttpClient) { }
 
-  descargarPlanning(empleadoId: number, fecha: string): void {
-    this.http.get(`${this.apiUrl}/empleado/${empleadoId}`, {
-      params: { fecha },
-      responseType: 'blob'
-    }).subscribe(pdfBlob => {
-      const url = window.URL.createObjectURL(pdfBlob);
-      const enlace = document.createElement('a');
-      enlace.href = url;
-      enlace.download = `planning_${fecha}.pdf`;
-      enlace.click();
-      window.URL.revokeObjectURL(url);
-    });
+  descargarPlanning(empleadoId: number, fecha: string, alError?: (mensaje: string) => void): void {
+    this.descargar(`empleado/${empleadoId}`, { fecha }, `planning_${fecha}.pdf`, alError);
   }
 
-  descargarPlanningGeneral(desde: string, hasta: string): void {
-    this.http.get(`${this.apiUrl}/general`, {
-      params: { desde, hasta },
-      responseType: 'blob'
-    }).subscribe(pdfBlob => {
-      const url = window.URL.createObjectURL(pdfBlob);
-      const enlace = document.createElement('a');
-      enlace.href = url;
-      enlace.download = `planning_${desde}_${hasta}.pdf`;
-      enlace.click();
-      window.URL.revokeObjectURL(url);
-    });
+  descargarPlanningGeneral(desde: string, hasta: string, alError?: (mensaje: string) => void): void {
+    this.descargar('general', { desde, hasta }, `horario_${desde}_${hasta}.pdf`, alError);
   }
 
-  descargarPorTrabajador(desde: string, hasta: string): void {
-    this.http.get(`${this.apiUrl}/por-trabajador`, {
-      params: { desde, hasta },
-      responseType: 'blob'
-    }).subscribe(pdfBlob => {
-      const url = window.URL.createObjectURL(pdfBlob);
-      const enlace = document.createElement('a');
-      enlace.href = url;
-      enlace.download = `planning_trabajadores_${desde}_${hasta}.pdf`;
-      enlace.click();
-      window.URL.revokeObjectURL(url);
+  descargarPorTrabajador(desde: string, hasta: string, alError?: (mensaje: string) => void): void {
+    this.descargar('por-trabajador', { desde, hasta }, `planning_trabajadores_${desde}_${hasta}.pdf`, alError);
+  }
+
+  private descargar(ruta: string, params: Record<string, string>, nombre: string,
+    alError?: (mensaje: string) => void): void {
+    this.http.get(`${this.apiUrl}/${ruta}`, { params, responseType: 'blob' }).subscribe({
+      next: (pdf) => {
+        const url = window.URL.createObjectURL(pdf);
+        const enlace = document.createElement('a');
+        enlace.href = url;
+        enlace.download = nombre;
+        document.body.appendChild(enlace);
+        enlace.click();
+        document.body.removeChild(enlace);
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        let motivo: string;
+        if (err.status === 0) {
+          motivo = 'no hay conexión con el servidor';
+        } else if (err.status === 401 || err.status === 403) {
+          motivo = 'error 403 (sesión caducada o fallo interno del servidor)';
+        } else {
+          motivo = `error ${err.status} del servidor`;
+        }
+        alError?.(`No se pudo descargar el PDF: ${motivo}.`);
+      }
     });
   }
 }
